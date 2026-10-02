@@ -40,10 +40,14 @@ Le poste Client2 (10.2.121.30), déjà joint au domaine, occupe l'adresse du ser
      +-------------------+---------------+-----------------------------+
      |                   |                                             |
  Passerelle         AD-DC 10.2.121.2                         Postes clients (gsblolo.local)
- 10.2.121.1         AD DS + DNS                              .20 Accueil        .60 DSI
-                    gsblolo.local                            .30 Communication  .70 Labo-recherche
-                                                             .40 Comptabilité   .80 Réseaux & Systèmes
-                                                             .50 Développement  .90 RH
+ 10.2.121.1         AD DS + DNS                              10.2.121.20 Accueil
+                    gsblolo.local                            10.2.121.30 Communication
+                                                             10.2.121.40 Comptabilité
+                                                             10.2.121.50 Développement
+                                                             10.2.121.60 DSI
+                                                             10.2.121.70 Labo-recherche
+                                                             10.2.121.80 Réseaux & Systèmes
+                                                             10.2.121.90 RH
 ```
 
 ## Flux
