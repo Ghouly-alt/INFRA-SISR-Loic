@@ -8,10 +8,10 @@ J'utilise les ressources qui me sont attribuées pour séparer les services de G
 | --- | --- |
 | Réseau IP | 10.2.121.0/24 |
 | VLAN | 800 |
-| VMID | 802 et suivants |
+| VMID | 801 (AD-DC), 802 (Client2) |
 | Pont Proxmox | vmbr2 (carte Intel E1000, VLAN tag 800) |
-| Contrôleur de domaine | 802, AD-DC, 10.2.121.2 |
-| Poste client | Client2, 10.2.121.30 |
+| Contrôleur de domaine | 801, AD-DC, 10.2.121.2 |
+| Poste client | 802, Client2, 10.2.121.30 |
 | Passerelle | 10.2.121.1 |
 | DNS | 10.2.121.2 (DC) |
 

@@ -4,7 +4,7 @@ Je présente ici la mise en place de mon contrôleur de domaine puis la jonction
 
 ## 1. Créer la machine virtuelle
 
-J'ai créé une VM sur Proxmox VE (nœud **pve**, pool **Lolo**) avec le **VMID 802** et le nom **AD-DC**.
+J'ai créé une VM sur Proxmox VE (nœud **pve**, pool **Lolo**) avec le **VMID 801** et le nom **AD-DC**.
 
 ![Onglet General](images/01-vm-general.png)
 
@@ -110,7 +110,7 @@ Les comptes utilisateurs ont été créés avec le [script d'import](Import-Util
 
 ## 5. Créer et joindre le poste client
 
-J'ai créé une seconde VM **Client2** dans le même pool, avec la même configuration matérielle (UEFI + TPM, 4 vCPU, disque IDE de 60 Gio, vmbr2 / VLAN 800) et l'ISO Windows Entreprise.
+J'ai créé une seconde VM **Client2** (**VMID 802**) dans le même pool, avec la même configuration matérielle (UEFI + TPM, 4 vCPU, disque IDE de 60 Gio, vmbr2 / VLAN 800) et l'ISO Windows Entreprise.
 
 ![Client - General](images/29-client-general.png)
 
