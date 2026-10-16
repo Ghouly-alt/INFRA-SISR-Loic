@@ -13,7 +13,7 @@ Je mets en place un contrôleur de domaine (AD DS + DNS), l'arborescence des OU,
 | Sujet | Description |
 | --- | --- |
 | [Architecture du réseau](Architecture%20du%20r%C3%A9seau/Architecture-du-reseau.md) | VLAN, adressage et flux |
-| [Active Directory](Docs/Active%20Directory/Active-Directory.md) | VM, domaine, OU, groupes, comptes et jonction d'un poste |
+| [Active Directory](Active-Directory.md) | VM, domaine, OU, groupes, comptes et jonction d'un poste |
 
 ## Avancement
 
