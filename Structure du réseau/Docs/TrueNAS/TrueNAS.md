@@ -98,7 +98,11 @@ Pour chaque dataset, j'ai ouvert **Permissions > Edit** et ajouté une entrée d
 
 ## 9. Créer les partages SMB
 
-Dans **Shares > Windows (SMB) Shares**, j'ai créé un partage par service, avec le chemin du dataset (par exemple `/mnt/Stockage/Services/Accueil`) et le même nom, puis j'ai démarré le service SMB. Depuis le poste **Client1** (VM 810, Windows 10 Entreprise), `\\10.2.121.14` affiche les 8 partages.
+Dans **Shares > Windows (SMB) Shares**, j'ai créé un partage par service, avec le chemin du dataset (par exemple `/mnt/Stockage/Services/Accueil`) et le même nom, puis j'ai démarré le service SMB. Dans **Shares > SMB**, le service est **RUNNING** et les 8 partages sont activés.
+
+![Liste des partages SMB](images/19-partages-truenas.png)
+
+Depuis le poste **Client1** (VM 810, Windows 10 Entreprise), `\\10.2.121.14` affiche les 8 partages.
 
 ![Partages vus depuis Client1](images/16-partages-client.png)
 
