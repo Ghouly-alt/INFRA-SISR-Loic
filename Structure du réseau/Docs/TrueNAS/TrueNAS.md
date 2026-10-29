@@ -1,4 +1,4 @@
-# TrueNAS - AP 1 GSBLOLO
+# TrueNAS - Structure du réseau GSBLOLO
 
 Je présente ici la mise en place du serveur de stockage **TrueNAS** sur Proxmox VE, avec mes propres captures d'écran.
 
