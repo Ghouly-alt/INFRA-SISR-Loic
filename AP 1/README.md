@@ -12,10 +12,10 @@ Je mets en place un contrôleur de domaine (AD DS + DNS), l'arborescence des OU,
 
 | Sujet | Description |
 | --- | --- |
-| [Architecture du réseau](Architecture%20du%20r%C3%A9seau/Architecture-du-reseau.md) | VLAN, adressage et flux |
-| [Active Directory](Docs/Active%20Directory/Active-Directory.md) | VM, domaine, OU, groupes, comptes et jonction d'un poste |
-| [Contrôleur de domaine secondaire](Docs/DC%20secondaire/DC-secondaire.md) | VM DC-SECONDAIRE et liaison avec le DC principal |
-| [TrueNAS](Docs/TrueNAS/TrueNAS.md) | VM, installation de TrueNAS 25.10.1 et intégration au domaine |
+| [Architecture du réseau](../Structure%20du%20r%C3%A9seau/Architecture%20du%20r%C3%A9seau/Architecture-du-reseau.md) | VLAN, adressage et flux |
+| [Active Directory](../Structure%20du%20r%C3%A9seau/Docs/Active%20Directory/Active-Directory.md) | VM, domaine, OU, groupes, comptes et jonction d'un poste |
+| [Contrôleur de domaine secondaire](../Structure%20du%20r%C3%A9seau/Docs/DC%20secondaire/DC-secondaire.md) | VM DC-SECONDAIRE et liaison avec le DC principal |
+| [TrueNAS](../Structure%20du%20r%C3%A9seau/Docs/TrueNAS/TrueNAS.md) | VM, installation de TrueNAS 25.10.1 et intégration au domaine |
 
 ## Avancement
 
