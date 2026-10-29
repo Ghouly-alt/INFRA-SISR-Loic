@@ -5,10 +5,10 @@ Ce dépôt présente mon infrastructure réalisée pour les ateliers professionn
 | Atelier | Contenu | État |
 | --- | --- | --- |
 | [AP 1](AP%201/README.md) | Réseau, virtualisation et Active Directory | Terminé |
-| [AP 2](AP%202/README.md) | À définir | À venir |
+| [AP 2](AP%202/README.md) | Serveur de stockage TrueNAS | En cours |
 
 ## Mon environnement Proxmox
 
-Mon infrastructure utilise le réseau **10.2.121.0/24**, le **VLAN 800** et les VMID **801 et 802**, dans le pool de ressources **Lolo** du nœud **pve**. Mon contrôleur de domaine utilise la VM **801 (AD-DC)** et l'adresse **10.2.121.2**.
+Mon infrastructure utilise le réseau **10.2.121.0/24**, le **VLAN 800** et les VMID **801, 802 et 803**, dans le pool de ressources **Lolo** du nœud **pve**. Mon contrôleur de domaine utilise la VM **801 (AD-DC)** et l'adresse **10.2.121.2**. Mon serveur de stockage TrueNAS utilise la VM **803**.
 
 Je décris dans l'[AP 1](AP%201/README.md) les étapes réalisées et les choix techniques de mon projet.
