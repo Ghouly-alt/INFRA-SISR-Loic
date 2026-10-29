@@ -92,7 +92,7 @@ J'ai créé le dataset **Services** (`Stockage/Services`), puis un dataset par s
 
 ## 8. Donner les droits aux groupes AD
 
-Pour chaque dataset, j'ai ouvert **Permissions > Edit** et ajouté une entrée de type **Group** pour le groupe de sécurité du service, avec le niveau **Modify** et l'héritage activé. Par exemple, `GSBLOLO\accueil` pour le dataset `Accueil`. Les groupes du domaine sont proposés dans la liste : TrueNAS est donc bien relié à l'annuaire **GSBLOLO.local**. L'entrée `everyone@` ne garde que le droit de traverser, sans lister ni lire le contenu.
+Pour chaque dataset, j'ai ouvert **Permissions > Edit** et ajouté une entrée de type **Group** pour le groupe de sécurité du service, avec le niveau **Modify** et l'héritage activé. Par exemple, `GSBLOLO\accueil` pour le dataset `Accueil`. Les groupes du domaine sont proposés dans la liste, et l'état de l'annuaire dans **Credentials > Directory Services** est **Healthy** : TrueNAS est donc bien relié à l'annuaire **GSBLOLO.local**. L'entrée `everyone@` ne garde que le droit de traverser, sans lister ni lire le contenu.
 
 ![ACL du dataset Accueil](images/15-acl-accueil.png)
 
@@ -104,7 +104,7 @@ Dans **Shares > Windows (SMB) Shares**, j'ai créé un partage par service, avec
 
 ## 10. Tester les droits
 
-Avec un compte du service DSI, j'ouvre `\\10.2.121.14\dsi` et je crée un dossier `Test_Truenas` : l'accès est autorisé.
+Depuis Client1, je me connecte avec le compte du domaine **GSBLOLO\L.Bodet**, membre du service DSI, puis j'ouvre `\\10.2.121.14\dsi` et je crée un dossier `Test_Truenas` : l'accès est autorisé.
 
 ![Accès au partage dsi](images/17-acces-autorise.png)
 
