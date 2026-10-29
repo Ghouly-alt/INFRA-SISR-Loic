@@ -66,3 +66,48 @@ La console de la VM affiche le menu de configuration (interfaces réseau, param�
 Dans **Utilisateurs et ordinateurs Active Directory** de **gsblolo.local**, l'ordinateur **TRUENAS** apparaît dans le conteneur **Computers** : le serveur est bien rattaché au domaine.
 
 ![Ordinateur TRUENAS dans l'AD](images/11-ad-ordinateur.png)
+
+## 6. Créer le pool de stockage
+
+Pour créer le pool dans **Storage > Create Pool**, TrueNAS a d'abord refusé avec l'erreur **Disks have duplicate serial numbers: None (sda, sdb)**. Les disques virtuels Proxmox n'ont pas de numéro de série, or TrueNAS en exige un unique par disque.
+
+![Erreur topology](images/12-erreur-numero-serie.png)
+
+J'ai donné un numéro de série à chaque disque depuis le shell du nœud Proxmox, puis j'ai éteint et redémarré complètement la VM :
+
+```bash
+qm set 803 --scsi0 Raid5-VMs:vm-803-disk-0,iothread=1,serial=TRUENAS0001
+qm set 803 --scsi1 Raid5-VMs:vm-803-disk-1,iothread=1,serial=TRUENAS0002
+```
+
+J'ai ensuite créé le pool **Stockage** sur le disque de 32 Gio (le disque de 60 Gio contient le système). Il n'y a qu'un disque, donc la disposition est un simple disque (sans redondance), suffisante pour ce projet. Le tableau de bord indique 30,52 Gio utilisables, l'état **Online, no errors** et un scrub programmé le dimanche à 00:00.
+
+![Pool Stockage](images/13-pool-stockage.png)
+
+## 7. Créer les datasets
+
+J'ai créé le dataset **Services** (`Stockage/Services`), puis un dataset par service dedans avec le préréglage **SMB** : `Accueil`, `Communication`, `Comptabilite`, `Developpement`, `DSI`, `Labo-recherche`, `Reseaux-Systemes` et `RH`. Je n'ai pas mis d'accents ni de `&` dans les noms.
+
+![Dataset Services](images/14-dataset-services.png)
+
+## 8. Donner les droits aux groupes AD
+
+Pour chaque dataset, j'ai ouvert **Permissions > Edit** et ajouté une entrée de type **Group** pour le groupe de sécurité du service, avec le niveau **Modify** et l'héritage activé. Par exemple, `GSBLOLO\accueil` pour le dataset `Accueil`. Les groupes du domaine sont proposés dans la liste : TrueNAS est donc bien relié à l'annuaire **GSBLOLO.local**. L'entrée `everyone@` ne garde que le droit de traverser, sans lister ni lire le contenu.
+
+![ACL du dataset Accueil](images/15-acl-accueil.png)
+
+## 9. Créer les partages SMB
+
+Dans **Shares > Windows (SMB) Shares**, j'ai créé un partage par service, avec le chemin du dataset (par exemple `/mnt/Stockage/Services/Accueil`) et le même nom, puis j'ai démarré le service SMB. Depuis le poste **Client1** (VM 810, Windows 10 Entreprise), `\\10.2.121.14` affiche les 8 partages.
+
+![Partages vus depuis Client1](images/16-partages-client.png)
+
+## 10. Tester les droits
+
+Avec un compte du service DSI, j'ouvre `\\10.2.121.14\dsi` et je crée un dossier `Test_Truenas` : l'accès est autorisé.
+
+![Accès au partage dsi](images/17-acces-autorise.png)
+
+Le même compte essaie ensuite d'ouvrir `\\10.2.121.14\rh` : Windows refuse l'accès. Les droits par groupe fonctionnent donc comme prévu : chaque service n'accède qu'à son propre partage.
+
+![Accès refusé au partage rh](images/18-acces-refuse.png)
