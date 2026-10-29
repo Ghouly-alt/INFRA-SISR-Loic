@@ -1,4 +1,4 @@
-# Active Directory - Structure du réseau GSBLOLO
+# Active Directory - AP 1 GSBLOLO
 
 Je présente ici la mise en place de mon contrôleur de domaine puis la jonction d'un poste client, avec mes propres captures d'écran.
 

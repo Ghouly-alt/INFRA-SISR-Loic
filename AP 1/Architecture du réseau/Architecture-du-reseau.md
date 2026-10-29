@@ -1,4 +1,4 @@
-# Architecture du réseau - Structure du réseau
+# Architecture du réseau - AP 1
 
 ## Répartition et adressage
 

@@ -1,4 +1,4 @@
-# Contrôleur de domaine secondaire - Structure du réseau GSBLOLO
+# Contrôleur de domaine secondaire - AP 1 GSBLOLO
 
 Je présente ici la mise en place d'un second contrôleur de domaine, **DC-SECONDAIRE**, relié au contrôleur principal **AD-DC** pour le domaine **GSBLOLO.local**. Il assure la redondance de l'annuaire et du DNS : si AD-DC tombe, les postes peuvent encore s'authentifier.
 
