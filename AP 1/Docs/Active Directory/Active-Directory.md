@@ -110,7 +110,7 @@ Les comptes utilisateurs ont été créés avec le [script d'import](Import-Util
 
 ## 5. Créer et joindre le poste client
 
-J'ai créé une seconde VM **Client2** (**VMID 802**) dans le même pool, avec la même configuration matérielle (UEFI + TPM, 4 vCPU, disque IDE de 60 Gio, vmbr2 / VLAN 800) et l'ISO Windows Entreprise.
+J'ai créé une seconde VM **Client2** (**VMID 802**, repris ensuite par la [DC secondaire](../DC%20secondaire/DC-secondaire.md)) dans le même pool, avec la même configuration matérielle (UEFI + TPM, 4 vCPU, disque IDE de 60 Gio, vmbr2 / VLAN 800) et l'ISO Windows Entreprise.
 
 ![Client - General](images/29-client-general.png)
 
