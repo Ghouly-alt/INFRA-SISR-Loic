@@ -47,7 +47,11 @@ Je réponds **Yes** à la question sur le démarrage EFI.
 
 ![Démarrage EFI](images/08-boot-efi.png)
 
-## 3. Vérifier le fonctionnement
+## 3. Adresse réseau
+
+Le serveur TrueNAS utilise l'adresse **10.2.121.14**, dans le réseau **10.2.121.0/24** (VLAN 800) de l'infrastructure.
+
+## 4. Vérifier le fonctionnement
 
 Après le redémarrage, l'interface web est accessible avec **truenas_admin**. Le tableau de bord indique **TrueNAS Community Edition 25.10.1 (Goldeye)**, le nom d'hôte **truenas** et la mémoire disponible.
 
@@ -57,7 +61,7 @@ La console de la VM affiche le menu de configuration (interfaces réseau, param�
 
 ![Menu de la console](images/10-menu-console.png)
 
-## 4. Intégration au domaine
+## 5. Intégration au domaine
 
 Dans **Utilisateurs et ordinateurs Active Directory** de **gsblolo.local**, l'ordinateur **TRUENAS** apparaît dans le conteneur **Computers** : le serveur est bien rattaché au domaine.
 

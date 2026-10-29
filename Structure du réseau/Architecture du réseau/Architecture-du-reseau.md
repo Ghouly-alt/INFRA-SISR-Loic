@@ -12,6 +12,7 @@ J'utilise les ressources qui me sont attribuées pour séparer les services de G
 | Pont Proxmox | vmbr2 (carte Intel E1000, VLAN tag 800) |
 | Contrôleur de domaine | 801, AD-DC, 10.2.121.2 |
 | Contrôleur de domaine secondaire | 802, DC-SECONDAIRE, 10.2.121.3 |
+| Serveur de stockage | 803, TrueNAS, 10.2.121.14 |
 | Poste client | Client2, 10.2.121.30 (VMID 802 à l'origine) |
 | Passerelle | 10.2.121.1 |
 | DNS | 10.2.121.2 (DC) |
