@@ -6,6 +6,7 @@ Ce dépôt présente mon infrastructure réalisée pour les ateliers professionn
 | --- | --- | --- |
 | [AP 1](AP%201/README.md) | Réseau, virtualisation, Active Directory et TrueNAS | Terminé |
 | [AP 2](AP%202/README.md) | À définir | À venir |
+| [Structure du réseau](Structure%20du%20r%C3%A9seau/README.md) | À définir | À venir |
 
 ## Mon environnement Proxmox
 
