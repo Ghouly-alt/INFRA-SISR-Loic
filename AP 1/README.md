@@ -14,6 +14,7 @@ Je mets en place un contrôleur de domaine (AD DS + DNS), l'arborescence des OU,
 | --- | --- |
 | [Architecture du réseau](Architecture%20du%20r%C3%A9seau/Architecture-du-reseau.md) | VLAN, adressage et flux |
 | [Active Directory](Docs/Active%20Directory/Active-Directory.md) | VM, domaine, OU, groupes, comptes et jonction d'un poste |
+| [TrueNAS](Docs/TrueNAS/TrueNAS.md) | VM, installation de TrueNAS 25.10.1 et intégration au domaine |
 
 ## Avancement
 
@@ -21,4 +22,5 @@ Je mets en place un contrôleur de domaine (AD DS + DNS), l'arborescence des OU,
 - J'ai configuré les rôles AD DS et DNS et le domaine **gsblolo.local** (NetBIOS **GSBLOLO**).
 - J'ai créé les OU, 8 groupes de sécurité et les comptes utilisateurs (import PowerShell depuis un CSV).
 - J'ai joint le poste client au domaine et ouvert une session avec le compte **GSBLOLO\X.turnbull**.
+- J'ai créé la VM **TrueNAS** (VMID 803), installé **TrueNAS Community Edition 25.10.1** et vérifié qu'elle apparaît dans l'annuaire sous le nom **TRUENAS**.
 - La suite du projet porte sur l'AP 2.

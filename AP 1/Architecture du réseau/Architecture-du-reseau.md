@@ -8,7 +8,7 @@ J'utilise les ressources qui me sont attribuées pour séparer les services de G
 | --- | --- |
 | Réseau IP | 10.2.121.0/24 |
 | VLAN | 800 |
-| VMID | 801 (AD-DC), 802 (Client2), 803 (TrueNAS, voir l'AP 2) |
+| VMID | 801 (AD-DC), 802 (Client2), 803 (TrueNAS) |
 | Pont Proxmox | vmbr2 (carte Intel E1000, VLAN tag 800) |
 | Contrôleur de domaine | 801, AD-DC, 10.2.121.2 |
 | Poste client | 802, Client2, 10.2.121.30 |
