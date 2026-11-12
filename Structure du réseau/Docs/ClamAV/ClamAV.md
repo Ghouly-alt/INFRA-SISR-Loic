@@ -616,7 +616,7 @@ Lecture du statut :
 
 ## 11. Dépannage : erreurs rencontrées
 
-### 11.1 `apt update` : « Erreur temporaire de résolution »
+### 11.1 `apt update` : Erreur temporaire de résolution
 
 **Symptôme :**
 
@@ -642,7 +642,7 @@ cat /etc/resolv.conf          # quel serveur DNS est utilisé ?
 
 Relancer ensuite `apt update`, sans aucune ligne `Err`.
 
-### 11.2 Timer : « Job failed » et « 0 timers listed »
+### 11.2 Timer : Job failed et 0 timers listed
 
 | Message | Cause | Correction |
 |---|---|---|

@@ -6,7 +6,7 @@ Ce dépôt présente mon infrastructure réalisée pour les ateliers professionn
 | --- | --- | --- |
 | AP 1 | À définir | À venir |
 | [AP 2](AP%202/README.md) | À définir | À venir |
-| [Structure du réseau](Structure%20du%20r%C3%A9seau/README.md) | Architecture réseau, Active Directory, DC secondaire, TrueNAS et ClamAV | En cours |
+| [Structure du réseau](Structure%20du%20r%C3%A9seau/README.md) | Architecture réseau, Active Directory, DC secondaire, TrueNAS, ClamAV et ClamUI | En cours |
 
 ## Mon environnement Proxmox
 
