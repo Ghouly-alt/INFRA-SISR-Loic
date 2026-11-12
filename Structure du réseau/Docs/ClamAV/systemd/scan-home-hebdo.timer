@@ -1,0 +1,12 @@
+# /etc/systemd/system/scan-home-hebdo.timer
+# Lance scan-home-hebdo.service tous les dimanches à 02h00
+[Unit]
+Description=Lance le scan ClamAV de /home chaque semaine
+
+[Timer]
+OnCalendar=Sun *-*-* 02:00:00
+# Rattrape l'exécution au démarrage si la machine était éteinte à l'heure prévue
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,16 @@
+# /etc/systemd/system/scan-home-hebdo.service
+# Scan complet de /home, déclenché par scan-home-hebdo.timer
+# Pas de section [Install] : l'unité est "static", c'est le timer qui la lance.
+[Unit]
+Description=Scan ClamAV hebdomadaire de /home
+Requires=clamav-daemon.service
+After=clamav-daemon.service
+
+[Service]
+Type=oneshot
+# Priorité CPU et disque minimale pour ne pas gêner les autres services
+Nice=19
+IOSchedulingClass=idle
+# clamscan renvoie 1 quand il trouve un virus : ce n'est pas un échec du service
+SuccessExitStatus=1
+ExecStart=/usr/bin/clamscan -r -i --move=/var/quarantaine --log=/var/log/clamav/scan-home-hebdo.log /home

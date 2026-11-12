@@ -1,0 +1,15 @@
+# /etc/systemd/system/clamonacc.service
+# Scanner ClamAV en temps réel (On-Access) — s'appuie sur clamd
+[Unit]
+Description=ClamAV On-Access Scanner
+Requires=clamav-daemon.service
+After=clamav-daemon.service syslog.target network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/sbin/clamonacc -F --fdpass --log=/var/log/clamav/clamonacc.log --move=/var/quarantaine
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

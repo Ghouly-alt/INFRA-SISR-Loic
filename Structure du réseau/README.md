@@ -8,3 +8,4 @@
 | [Active Directory](Docs/Active%20Directory/Active-Directory.md) | VM, domaine, OU, groupes, comptes et jonction d'un poste |
 | [Contrôleur de domaine secondaire](Docs/DC%20secondaire/DC-secondaire.md) | VM DC-SECONDAIRE et liaison avec le DC principal |
 | [TrueNAS](Docs/TrueNAS/TrueNAS.md) | VM, installation de TrueNAS 25.10.1, pool de stockage, partages SMB par service et droits par groupe AD |
+| [ClamAV](Docs/ClamAV/ClamAV.md) | Antivirus sur Debian 12 : installation, signatures, tri des CV déposés, analyse en temps réel et scan hebdomadaire de /home |
