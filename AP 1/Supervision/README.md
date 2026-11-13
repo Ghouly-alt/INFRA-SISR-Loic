@@ -1,6 +1,6 @@
 # Supervision Prometheus / Grafana - AP 1 GSBLOLO
 
-> 🚧 **Documentation en cours de rédaction.** Cette page résume l'avancement. La documentation détaillée sera rédigée à la fin du projet, à partir des captures du dossier [`images/`](images/).
+> 📘 **Documentation détaillée : [Supervision.md](Supervision.md)** (étapes 1 à 5, avec captures). Cette page résume l'avancement ; la doc sera complétée au fil des étapes suivantes.
 
 Je mets en place une supervision de mon infrastructure avec **Prometheus** (collecte des métriques) et **Grafana** (tableaux de bord). Le premier objectif est de superviser l'antivirus **ClamAV** et son interface **ClamUI**.
 
