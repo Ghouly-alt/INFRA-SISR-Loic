@@ -5,7 +5,7 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 > **Prérequis :** ClamAV et ClamUI sont déjà installés et fonctionnels sur la VM 812 (voir les documentations [ClamAV](../../Structure%20du%20r%C3%A9seau/Docs/ClamAV/ClamAV.md) et [ClamUI](../../Structure%20du%20r%C3%A9seau/Docs/ClamUI/ClamUI.md)).
 >
 > **Dates de réalisation :** 12/11/2026 (étapes 1 à 4), 13/11/2026 (étape 5) et 19/11/2026 (étapes 6, 7 et 8)
-> **État :** étapes 1 à 8 terminées (supervision, tableaux de bord et alertes en service). Amélioration prévue ensuite : superviser les contrôleurs de domaine (windows_exporter) (voir [l'avancement](README.md)).
+> **État :** étapes 1 à 9 terminées : supervision de ClamAV et de l'Active Directory, tableaux de bord et alertes en service. (voir [l'avancement](README.md)).
 
 ---
 
@@ -20,8 +20,9 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 7. [Étape 6 : Grafana relié à Prometheus](#7-étape-6--grafana-relié-à-prometheus)
 8. [Étape 7 : connexion à Grafana avec l'Active Directory](#8-étape-7--connexion-à-grafana-avec-lactive-directory)
 9. [Étape 8 : tableau de bord et alertes](#9-étape-8--tableau-de-bord-et-alertes)
-10. [Dépannage : erreurs rencontrées](#10-dépannage--erreurs-rencontrées)
-11. [Récapitulatif](#11-récapitulatif)
+10. [Étape 9 : supervision de l'Active Directory](#10-étape-9--supervision-de-lactive-directory)
+11. [Dépannage : erreurs rencontrées](#11-dépannage--erreurs-rencontrées)
+12. [Récapitulatif](#12-récapitulatif)
 
 ---
 
@@ -77,7 +78,7 @@ Pendant l'installation, l'installeur lance automatiquement une configuration **D
 | DNS | Mon contrôleur de domaine (`10.2.121.2`) |
 | Utilisateur | `supervison1` |
 
-Au premier redémarrage, la VM est restée bloquée sur `Booting from Hard Disk...` : GRUB n'avait pas été installé sur le disque (voir [§ 10.1](#101-booting-from-hard-disk-bloqué-grub-absent)).
+Au premier redémarrage, la VM est restée bloquée sur `Booting from Hard Disk...` : GRUB n'avait pas été installé sur le disque (voir [§ 11.1](#111-booting-from-hard-disk-bloqué-grub-absent)).
 
 ![Démarrage bloqué : GRUB absent](images/02-erreur-grub.png)
 
@@ -104,7 +105,7 @@ ssh supervison1@10.2.121.15
 
 ### 2.3 Poste de travail
 
-Mon PC Windows est sur un autre réseau et n'a pas de route vers 10.2.121.0/24 (voir [§ 10.2](#102-pc-windows-sans-route-vers-le-réseau-du-labo)). Je travaille donc depuis la **VM ClamAV**, qui a un bureau : son navigateur me sert pour l'interface de Prometheus, et son terminal pour me connecter en SSH à SUPERVISION.
+Mon PC Windows est sur un autre réseau et n'a pas de route vers 10.2.121.0/24 (voir [§ 11.2](#112-pc-windows-sans-route-vers-le-réseau-du-labo)). Je travaille donc depuis la **VM ClamAV**, qui a un bureau : son navigateur me sert pour l'interface de Prometheus, et son terminal pour me connecter en SSH à SUPERVISION.
 
 ![SSH vers SUPERVISION depuis la VM ClamAV](images/05-ssh-depuis-vm-clamav.png)
 
@@ -185,7 +186,7 @@ Au moment de cette étape, la VM ClamAV avait l'adresse `10.2.121.10` :
 
 ![IP de la VM ClamAV](images/07-ip-vm-clamav.png)
 
-Le test depuis SUPERVISION a d'abord échoué parce que `curl` n'était pas installé (voir [§ 10.3](#103-curl-absent-sur-supervision)) :
+Le test depuis SUPERVISION a d'abord échoué parce que `curl` n'était pas installé (voir [§ 11.3](#113-curl-absent-sur-supervision)) :
 
 ![curl absent](images/16-erreur-curl.png)
 
@@ -248,7 +249,7 @@ L'adresse n'est plus `dynamic`, la route par défaut est maintenant `proto stati
 
 ### 4.4 Ajout de la cible dans Prometheus
 
-J'ai voulu remplacer `10.2.121.10` par `10.2.121.12` avec `sed`, mais `grep` ne trouvait aucune ligne : la cible ClamAV n'avait **jamais été ajoutée** au fichier (voir [§ 10.4](#104-cible-clamav-absente-de-prometheusyml)). Prometheus n'avait donc qu'une cible `node` :
+J'ai voulu remplacer `10.2.121.10` par `10.2.121.12` avec `sed`, mais `grep` ne trouvait aucune ligne : la cible ClamAV n'avait **jamais été ajoutée** au fichier (voir [§ 11.4](#114-cible-clamav-absente-de-prometheusyml)). Prometheus n'avait donc qu'une cible `node` :
 
 ![sed sans effet](images/27-promtool-sans-cible.png)
 ![Seulement 1 cible node](images/28-targets-1-sur-1.png)
@@ -400,7 +401,7 @@ Requêtes de vérification :
 | `clamav_up` | 1 | `clamd` répond |
 | `clamav_db_version` | 28181 | Version de la base `daily` |
 | `(time() - clamav_db_timestamp_seconds) / 3600` | 9,28 | Âge des signatures en heures, futur seuil d'alerte |
-| `clamav_memory_used_bytes / 1024 / 1024` | *no data* | Voir [§ 10.5](#105-clamav_memory_used_bytes-sans-données) |
+| `clamav_memory_used_bytes / 1024 / 1024` | *no data* | Voir [§ 11.5](#115-clamav_memory_used_bytes-sans-données) |
 
 ![clamav_up](images/42-clamav-up.png)
 ![Version de la base](images/43-db-version.png)
@@ -492,7 +493,7 @@ curl -s localhost:9100/metrics | grep -E '^clamav_'
 La première capture montre le fichier écrit par le script, la seconde les mêmes valeurs exposées par node_exporter sur le port 9100 :
 - **Tri des CV :** 0 CV en attente, 1 sain (`ok.txt`), 1 infecté (`eicar.txt`). Le journal compte 2 analyses, dont 1 infectée.
 - **Scan hebdo :** 4 305 fichiers analysés, 0 infecté. `1794484467` est une date au format epoch (secondes depuis 1970), soit le 12/11 à 12:54.
-- **Services :** `clamav-daemon` et `clamonacc` à 1, mais **`clamav-freshclam` à 0** (voir [§ 10.6](#106-clamav-freshclam-arrêté-et-désactivé)).
+- **Services :** `clamav-daemon` et `clamonacc` à 1, mais **`clamav-freshclam` à 0** (voir [§ 11.6](#116-clamav-freshclam-arrêté-et-désactivé)).
 - node_exporter trie les métriques par ordre alphabétique et écrit les grands nombres en notation scientifique (`1.794484467e+09` = 1794484467).
 
 Deux corrections ont suivi ce premier lancement :
@@ -507,7 +508,7 @@ systemctl enable --now clamav-freshclam
 ![freshclam inactive et disabled](images/53-freshclam-disabled.png)
 ![freshclam réactivé](images/54-freshclam-enable.png)
 
-**Taille de la quarantaine corrigée :** `clamav_quarantine_bytes` valait 4096 avec une quarantaine vide (voir [§ 10.7](#107-taille-de-quarantaine-à-4096-octets-pour-un-dossier-vide)).
+**Taille de la quarantaine corrigée :** `clamav_quarantine_bytes` valait 4096 avec une quarantaine vide (voir [§ 11.7](#117-taille-de-quarantaine-à-4096-octets-pour-un-dossier-vide)).
 
 ![quarantine_bytes à 0 et freshclam à 1](images/55-quarantaine-bytes-corrige.png)
 
@@ -645,7 +646,7 @@ J'analyse `/home/thibaut/Téléchargements`, puis je mets les menaces en quarant
 
 L'analyse de 14:24:24 trouve **2 menaces** :
 - `test-supervision.exe` (`Clamav.Test.File-6`), le fichier que je venais de copier ;
-- `eicar.txt` (`Eicar-Test-Signature`), le fichier EICAR de la veille, resté sur place car il n'avait pas été mis en quarantaine (voir [§ 10.8](#108-fichier-eicar-non-bloqué-par-clamonacc)).
+- `eicar.txt` (`Eicar-Test-Signature`), le fichier EICAR de la veille, resté sur place car il n'avait pas été mis en quarantaine (voir [§ 11.8](#118-fichier-eicar-non-bloqué-par-clamonacc)).
 
 Après le passage du cron, Prometheus affiche :
 
@@ -858,7 +859,7 @@ allow_sign_up = true
 ![Lignes encore en commentaire](images/100-grafana-ini-points-virgules.png)
 ![Section [auth.ldap] corrigée](images/105-grafana-ini-corrige.png)
 
-Ma première modification n'avait pas enlevé les `;` en début de ligne, donc LDAP restait désactivé (voir [§ 10.9](#109-ldap-non-activé--lignes-restées-en-commentaire)).
+Ma première modification n'avait pas enlevé les `;` en début de ligne, donc LDAP restait désactivé (voir [§ 11.9](#119-ldap-non-activé--lignes-restées-en-commentaire)).
 
 **Paramètres de connexion** dans `/etc/grafana/ldap.toml`. Le modèle, sans le mot de passe, est dans [`config/ldap.toml`](config/ldap.toml) :
 
@@ -1055,7 +1056,7 @@ systemctl restart grafana-server
 ![Redémarrage sans erreur](images/143-alertes-redemarrage.png)
 ![Dossier Supervision ClamAV](images/144-alertes-dossier.png)
 
-Au premier chargement, les 7 règles étaient en erreur **« data source not found »** : le fichier contenait littéralement `TON_UID` (voir [§ 10.14](#1014-alertes--data-source-not-found-)). Avec l'UID récupéré automatiquement, elles sont passées en **Normal**.
+Au premier chargement, les 7 règles étaient en erreur **« data source not found »** : le fichier contenait littéralement `TON_UID` (voir [§ 11.14](#1114-alertes--data-source-not-found-)). Avec l'UID récupéré automatiquement, elles sont passées en **Normal**.
 
 ![Erreur data source not found](images/145-alertes-data-source-not-found.png)
 ![UID récupéré automatiquement : 7 + 7](images/146-alertes-uid-auto.png)
@@ -1111,7 +1112,7 @@ systemctl daemon-reload && systemctl restart clamonacc && sleep 10 && systemctl 
 | 15:53:41 | clamonacc corrigé et relancé | — |
 | 15:55:37 | `A=1`, `C=0` | **Normal** |
 
-**Gravité « Unknown » :** sur la page d'accueil, Grafana ne reconnaît que l'étiquette anglaise `severity`. J'ai remplacé `severite: critique` par `severity: critical` (voir [§ 10.15](#1015-gravité--unknown--sur-la-page-daccueil)).
+**Gravité « Unknown » :** sur la page d'accueil, Grafana ne reconnaît que l'étiquette anglaise `severity`. J'ai remplacé `severite: critique` par `severity: critical` (voir [§ 11.15](#1115-gravité--unknown--sur-la-page-daccueil)).
 
 ![Correction de l'étiquette severity](images/155-severity-correction.png)
 
@@ -1179,46 +1180,201 @@ Cette fois, le fichier copié avec `cp` est détecté et déplacé **en moins de
 
 ---
 
-## 10. Dépannage : erreurs rencontrées
+## 10. Étape 9 : supervision de l'Active Directory
 
-### 10.1 `Booting from Hard Disk...` bloqué (GRUB absent)
+Objectif : un tableau de bord de mon Active Directory `gsblolo.local`, avec **les utilisateurs** et **les services installés, avec leur état**. J'utilise la même méthode que pour ClamAV : un exporter pour ce qui est standard, et un script maison pour le reste.
+
+| Besoin | Outil |
+|---|---|
+| Services Windows et leur état, santé du contrôleur | **windows_exporter** (l'équivalent Windows de node_exporter), port 9182 |
+| Activité de l'annuaire et du DNS | Collecteurs `ad` et `dns` de windows_exporter |
+| Comptes utilisateurs, groupes | Script PowerShell `ad_users_metrics.ps1` → fichier `.prom` lu par le collecteur `textfile` |
+
+### 10.1 windows_exporter sur AD-DC
+
+J'installe la version **0.32.1** et je vérifie son empreinte SHA-256, publiée sur la page de la version. Les collecteurs activés sont ceux par défaut (`[defaults]` : CPU, mémoire, disques, réseau, OS, services), plus `ad`, `dns` et `textfile`. La règle de pare-feu créée par l'installeur n'autorise le port 9182 **que depuis SUPERVISION** (`REMOTE_ADDR`).
+
+```powershell
+[Net.ServicePointManager]::SecurityProtocol = 'Tls12'
+$msi = "$env:TEMP\windows_exporter-0.32.1-amd64.msi"
+Invoke-WebRequest -Uri "https://github.com/prometheus-community/windows_exporter/releases/download/v0.32.1/windows_exporter-0.32.1-amd64.msi" -OutFile $msi -UseBasicParsing
+(Get-FileHash $msi -Algorithm SHA256).Hash -eq "8e1ade6a2fbcdeb4774c300b598667cd7888246be8fcc4b586d11b3680433981"
+Start-Process msiexec.exe -Wait -ArgumentList "/i `"$msi`" ENABLED_COLLECTORS=`"[defaults],ad,dns,textfile`" ADDLOCAL=FirewallException REMOTE_ADDR=10.2.121.15 /qn"
+```
+
+![Installation, empreinte vérifiée, service, pare-feu et services AD](images/180-ad-installation-exporter.png)
+
+**Résultat :**
+- empreinte **`True`** ;
+- service `windows_exporter` **Running** / **Automatic** ;
+- règle de pare-feu **Allow depuis 10.2.121.15** ;
+- les 6 services AD (ADWS, DNS, Kdc, NTDS, Netlogon, W32Time) à `running`.
+
+SUPERVISION reçoit **3 419 métriques**. Depuis la VM ClamAV, la connexion échoue avec `curl` code **28** (délai dépassé) : le pare-feu ne laisse passer que SUPERVISION.
+
+![3 419 métriques depuis SUPERVISION](images/181-ad-curl-supervision.png)
+![Bloqué depuis la VM ClamAV : code 28](images/182-ad-pare-feu-code-28.png)
+
+> ⚠️ Pour lire le code de retour de `curl`, il ne faut pas de tube : dans `curl … | head; echo $?`, `$?` est le code de `head`. La bonne commande est `curl -s --max-time 5 -o /dev/null URL; echo $?`.
+
+### 10.2 Cible Prometheus
+
+```yaml
+  - job_name: "windows"
+    static_configs:
+      - targets: ["10.2.121.2:9182"]
+        labels:
+          machine: "ad-dc"
+```
+
+![Job windows 1/1 up](images/183-ad-target-windows.png)
+![Les 6 services AD à 1 dans Grafana](images/184-ad-explore-services.png)
+![225 services installés](images/185-ad-explore-nombre-services.png)
+
+L'alerte « Cible Prometheus injoignable » couvre automatiquement cette nouvelle cible.
+
+### 10.3 Les comptes AD : script PowerShell et tâche planifiée
+
+windows_exporter ne lit pas la liste des comptes. Le script [`scripts/ad_users_metrics.ps1`](scripts/ad_users_metrics.ps1) la lit avec le module ActiveDirectory et écrit `C:\Program Files\windows_exporter\textfile_inputs\ad_users.prom`.
+
+| Métrique | Contenu |
+|---|---|
+| `ad_user_enabled`, `ad_user_locked_out` | Compte actif, verrouillé |
+| `ad_user_password_expired`, `ad_user_password_never_expires`, `ad_user_password_last_set_timestamp_seconds` | État du mot de passe |
+| `ad_user_last_logon_timestamp_seconds` | Dernière connexion (voir ci-dessous) |
+| `ad_user_created_timestamp_seconds` | Création du compte |
+| `ad_group_member{groupe, sam}` | Groupes de chaque utilisateur |
+| `ad_users_total{etat}`, `ad_computers_total`, `ad_groups_total` | Totaux du domaine |
+| `ad_metrics_last_run_timestamp_seconds`, `ad_metrics_dc_errors` | Santé du script |
+
+Chaque compte porte les étiquettes `sam` (identifiant), `nom` et `conteneur` (son emplacement dans l'annuaire, par exemple `Services/Utilisateurs`).
+
+Règles d'écriture :
+- **LF** et **saut de ligne final**, comme l'exige le collecteur `textfile` ;
+- encodage **UTF-8 sans BOM**, pour les accents ;
+- écriture dans un `.tmp` puis renommage, car le collecteur ne lit que les `.prom` ;
+- si une erreur survient, le script s'arrête (`$ErrorActionPreference = 'Stop'`) sans toucher à l'ancien fichier. `ad_metrics_last_run` vieillit alors, et le tableau de bord le montre.
+
+Le script est lui-même enregistré en **UTF-8 avec BOM**, pour que Windows PowerShell 5.1 lise correctement ses accents.
+
+**Sécurité :** la tâche tourne avec le compte **SYSTEM**. Si un simple utilisateur pouvait modifier le script, il ferait exécuter n'importe quoi avec les pleins pouvoirs sur le contrôleur de domaine. Le dossier `C:\Scripts` n'est donc accessible qu'aux Administrateurs et à SYSTEM. J'utilise leurs SID, qui ne dépendent pas de la langue de Windows :
+
+```powershell
+New-Item -ItemType Directory C:\Scripts -Force | Out-Null
+icacls C:\Scripts /inheritance:r /grant:r "*S-1-5-32-544:(OI)(CI)F" "*S-1-5-18:(OI)(CI)F"
+```
+
+![Dossier C:\Scripts réservé aux Administrateurs et à SYSTEM](images/186-ad-dossier-scripts.png)
+
+Premier lancement : erreur `L'index (de base zéro) doit être supérieur ou égal à zéro…` (voir [§ 11.18](#1118-powershell---f-dans-un-appel-de-méthode)). Après correction :
+
+![Erreur de l'opérateur -f](images/187-ad-script-erreur.png)
+![12 comptes exportés, textfile lu (collector_success 1)](images/188-ad-script-ok.png)
+
+**Résultat :**
+- **12 comptes** exportés : les 8 de `Services/Utilisateurs`, plus `Administrateur`, `svc-grafana`, `Invité` et `krbtgt` (ces deux derniers sont désactivés, comme toujours) ;
+- **10 actifs, 2 désactivés, 0 verrouillé** ;
+- `ad_metrics_dc_errors 0` : les deux contrôleurs de domaine ont répondu ;
+- `windows_exporter_collector_success{collector="textfile"} 1` : le fichier est bien lu.
+
+Tâche planifiée, toutes les 5 minutes, avec le compte SYSTEM :
+
+```powershell
+$action   = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '-NoProfile -ExecutionPolicy Bypass -File "C:\Scripts\ad_users_metrics.ps1"'
+$trigger  = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5)
+$settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 4) -MultipleInstances IgnoreNew
+Register-ScheduledTask -TaskName "Prometheus - utilisateurs AD" -Action $action -Trigger $trigger -Settings $settings -User "NT AUTHORITY\SYSTEM" -RunLevel Highest
+```
+
+Juste après la création, `Get-ScheduledTaskInfo` affiche `LastTaskResult : 267011`. C'est le code `0x41303`, qui veut dire « la tâche n'a pas encore été exécutée », et non une erreur. Après le premier passage, il vaut `0`.
+
+![Explore : ad_user_enabled, 12 comptes](images/189-ad-explore-comptes.png)
+![Explore : membres des groupes GG_Grafana](images/190-ad-explore-groupes.png)
+
+**La dernière connexion.** Dans la première version, Bodet Loic apparaissait connecté « il y a 2 mois », alors que je m'étais connecté à Grafana le matin même :
+
+```powershell
+foreach ($dc in (Get-ADDomainController -Filter *).HostName) { Get-ADUser L.Bodet -Server $dc -Properties lastLogon,LastLogonDate | Select-Object @{n='DC';e={$dc}}, @{n='lastLogon';e={[datetime]::FromFileTime($_.lastLogon)}}, LastLogonDate }
+```
+
+![lastLogon par DC et LastLogonDate](images/192-ad-lastlogon-dc.png)
+
+| Attribut | Répliqué ? | Voit les connexions LDAP (Grafana) ? | Précision |
+|---|---|---|---|
+| `lastLogon` | Non (une valeur par DC) | **Non** | Exacte |
+| `lastLogonTimestamp` (`LastLogonDate`) | Oui | **Oui** | Mis à jour seulement tous les 9 à 14 jours |
+
+Ma connexion à Grafana (11:20:08) était enregistrée seulement dans `lastLogonTimestamp`. Le script prend maintenant **le plus récent** des deux : le maximum de `lastLogon` sur tous les contrôleurs de domaine, et `lastLogonTimestamp`.
+
+![Dernière connexion corrigée : 1795083608 = 19/11 11:20:08](images/193-ad-script-lastlogon.png)
+
+### 10.4 Le tableau de bord Active Directory
+
+Le fichier [`config/dashboard-ad.json`](config/dashboard-ad.json) s'importe comme le tableau de bord ClamAV (**Dashboards → New → Import**). Une liste **Contrôleur**, en haut, permet de choisir le serveur : un futur DC-SECONDAIRE supervisé y apparaîtra automatiquement.
+
+| Ligne | Panneaux |
+|---|---|
+| **Contrôleur de domaine** | État UP/DOWN ; les 7 services AD (NTDS, DNS, Kdc, Netlogon, ADWS, W32Time, DFSR) « En cours » ou « Arrêté » ; version de Windows ; durée depuis le démarrage ; services automatiques arrêtés ; services en cours / installés |
+| **Utilisateurs et objets** | Comptes actifs, désactivés, **verrouillés** (rouge dès 1) ; ordinateurs ; groupes ; santé du script. **Tableau des comptes** : nom, identifiant, emplacement, Actif/Désactivé, verrouillé, dernière connexion, mot de passe changé le, mot de passe sans expiration, date de création. **Tableau des groupes** et de leurs membres. |
+| **Activité de l'annuaire** | Authentifications par méthode (NTLM, Negotiate/Kerberos, simple…), recherches LDAP, requêtes DNS, réplication en attente, CPU, mémoire, disque C: |
+| **Services Windows installés** | Services automatiques arrêtés (hors démarrage différé ou sur déclencheur), et tableau des **225 services** : nom affiché, nom, état, mode de démarrage, compte. Chaque colonne a un filtre. |
+
+![Tableau de bord AD : contrôleur et comptes](images/191-ad-dashboard-1.png)
+![Tableau des comptes avec la dernière connexion corrigée](images/194-ad-dashboard-comptes.png)
+![Groupes et activité de l'annuaire](images/195-ad-dashboard-groupes-activite.png)
+![Les services Windows et leur état](images/196-ad-dashboard-services.png)
+
+Les tableaux combinent plusieurs requêtes avec la transformation **Merge**. Pour que les lignes se rejoignent, chaque requête ne garde que les mêmes étiquettes, par exemple `max by (sam, nom, conteneur) (…)` pour les comptes, ou `max by (service, …) (…)` pour les services.
+
+**Ce qu'on lit sur mon domaine :**
+- Windows Server 2022 Standard Evaluation, allumé depuis 4 semaines ;
+- les 7 services AD en cours, et aucun service automatique arrêté ;
+- 85 services en cours sur 225 ;
+- 10 comptes actifs, 6 ordinateurs et 60 groupes ;
+- `svc-grafana` connecté « il y a 7 heures », par ses recherches LDAP pour Grafana.
+
+---
+
+## 11. Dépannage : erreurs rencontrées
+
+### 11.1 `Booting from Hard Disk...` bloqué (GRUB absent)
 
 **Symptôme :** après l'installation, la VM reste bloquée sur `Booting from Hard Disk...` (capture 02).
 **Cause :** le chargeur de démarrage GRUB n'avait pas été installé sur le disque.
 **Correction :** démarrage sur l'ISO Debian en mode de secours (*Advanced options → Rescue mode*), puis réinstallation de GRUB sur le disque de la VM.
 
-### 10.2 PC Windows sans route vers le réseau du labo
+### 11.2 PC Windows sans route vers le réseau du labo
 
 **Symptôme :** impossible de joindre 10.2.121.0/24 depuis mon PC.
 **Cause :** le PC est sur un autre réseau, sans route vers le VLAN 800.
 **Contournement :** je travaille depuis la VM ClamAV (navigateur pour Prometheus, terminal pour SSH).
 
-### 10.3 `curl` absent sur SUPERVISION
+### 11.3 `curl` absent sur SUPERVISION
 
 **Symptôme :** `-bash: curl : commande introuvable`, puis `E: L'opération curl n'est pas valable` (capture 16).
 **Cause :** Debian minimal n'installe pas `curl`, et `apt curl` n'est pas une commande valide.
 **Correction :** `apt install -y curl`.
 
-### 10.4 Cible ClamAV absente de `prometheus.yml`
+### 11.4 Cible ClamAV absente de `prometheus.yml`
 
 **Symptôme :** `sed` ne modifie rien et `grep -n "10.2.121"` ne trouve aucune ligne. Targets affiche `node (1/1 up)` et les requêtes sur `machine="clamav"` renvoient *no data* (captures 27 à 29).
 **Cause :** la cible `10.2.121.x:9100` n'avait jamais été ajoutée au fichier.
 **Correction :** réécriture de la section `scrape_configs` avec les deux cibles (capture 30).
 
-### 10.5 `clamav_memory_used_bytes` sans données
+### 11.5 `clamav_memory_used_bytes` sans données
 
 **Symptôme :** *no data* sur `clamav_memory_used_bytes` (capture 45).
 **Cause probable :** `clamd` ne renvoie pas ses statistiques mémoire à l'exporter sur cette version. La mémoire de la VM reste visible avec les métriques `node_memory_*`.
 **Statut :** non bloquant, à approfondir.
 
-### 10.6 `clamav-freshclam` arrêté et désactivé
+### 11.6 `clamav-freshclam` arrêté et désactivé
 
 **Symptôme :** `clamav_service_active{service="clamav-freshclam"} 0`. `systemctl status` affiche `inactive (dead)` et **`disabled`**, et `freshclam.log` n'avait plus bougé depuis le 12/11 (captures 51 et 53).
 **Cause :** le service avait été arrêté et désactivé. C'est souvent le cas quand on lance `freshclam` à la main, car il faut d'abord arrêter le service (erreur « log is locked »). Comme il était `disabled`, il ne serait jamais reparti, même au redémarrage.
 **Correction :** `systemctl enable --now clamav-freshclam` (capture 54).
 **À retenir :** c'est **la supervision qui a révélé ce problème**. Sans elle, la base de signatures aurait vieilli sans que personne ne le voie.
 
-### 10.7 Taille de quarantaine à 4096 octets pour un dossier vide
+### 11.7 Taille de quarantaine à 4096 octets pour un dossier vide
 
 **Symptôme :** `clamav_quarantine_files 0` mais `clamav_quarantine_bytes 4096`.
 **Cause :** `du -sb` compte aussi la taille du dossier lui-même (4 096 octets sur ext4).
@@ -1228,13 +1384,13 @@ Cette fois, le fichier copié avec `cp` est détecté et déplacé **en moins de
 find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 ```
 
-### 10.8 Fichier EICAR non bloqué par clamonacc
+### 11.8 Fichier EICAR non bloqué par clamonacc
 
 **Symptôme :** un fichier EICAR est resté dans `/home/thibaut/Téléchargements` depuis le 12/11, sans être bloqué par l'analyse en temps réel.
 **Cause :** clamonacc ne surveillait que `/home/flo/Téléchargements` et `/var/www/data/cv_incoming`. Le journal le confirme : `ClamInotif: watching '/home/flo/Téléchargements'`.
 **Correction (19/11) :** ajout de `OnAccessIncludePath /home/thibaut/Téléchargements` et de `OnAccessExtraScanning yes` dans `clamd.conf` (voir [§ 9.5](#95-analyse-en-temps-réel-des-téléchargements-de-thibaut)).
 
-### 10.9 LDAP non activé : lignes restées en commentaire
+### 11.9 LDAP non activé : lignes restées en commentaire
 
 **Symptôme :** après le redémarrage, `journalctl … | grep -i ldap` n'affiche rien (capture 102).
 **Cause :** dans `grafana.ini`, j'avais changé les valeurs mais laissé le `;` en début de ligne (`;enabled = true`). Le `;` met la ligne en commentaire, donc Grafana l'ignorait (capture 100).
@@ -1244,58 +1400,70 @@ find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 sed -i '/^\[auth.ldap\]/,/^\[/ s/^;\(enabled = true\|config_file = \|allow_sign_up = true\)/\1/' /etc/grafana/grafana.ini
 ```
 
-### 10.10 Scan hebdomadaire et clamonacc : `/var/quarantine` au lieu de `/var/quarantaine`
+### 11.10 Scan hebdomadaire et clamonacc : `/var/quarantine` au lieu de `/var/quarantaine`
 
 **Symptôme :** le scan hebdomadaire annonce `moved to '/var/quarantine/…'`, mais `/var/quarantaine` reste vide, et sa date de modification ne change pas.
 **Cause :** sur la VM, `scan-home-hebdo.service` **et** `clamonacc.service` contenaient `--move=/var/quarantine`, en orthographe anglaise. Les fichiers infectés partaient dans un dossier que la supervision ne regardait pas.
 **Correction :** `sed -i 's#/var/quarantine#/var/quarantaine#g'` sur les deux services, puis regroupement des fichiers. Avant de corriger, j'ai cherché toutes les occurrences avec `grep -rn "/var/quarantine" /etc/systemd/system /etc/clamav /usr/local/bin /etc/crontab /var/spool/cron`.
 **Conséquence :** supprimer `/var/quarantine` avant d'avoir corrigé clamonacc a fait échouer son redémarrage suivant (§ 9.4). **Il faut corriger toutes les références avant de supprimer un dossier.**
 
-### 10.11 Le scan hebdomadaire vidait la quarantaine de ClamUI
+### 11.11 Le scan hebdomadaire vidait la quarantaine de ClamUI
 
 **Symptôme :** le scan du 15/11 trouve 2 menaces, et la quarantaine de ClamUI est vide, alors que sa base en annonce 2.
 **Cause :** ClamUI range sa quarantaine dans `/home/thibaut/.var/app/…/clamui/quarantine/`, à l'intérieur de `/home`, et le scan hebdomadaire analyse `/home`.
 **Correction :** `--exclude-dir=^/home/[^/]+/.var/app/io.github.linx_systems.ClamUI/data/clamui/quarantine` dans le service.
 
-### 10.12 Verrou caché de `clamscan` / `clamonacc`
+### 11.12 Verrou caché de `clamscan` / `clamonacc`
 
 **Symptôme :** `rmdir: impossible de supprimer '/var/quarantine': Le dossier n'est pas vide`, alors que `mv *` a tout déplacé.
 **Cause :** un fichier caché `.clamav-quarantine-lock.<PID>.0`, créé par ClamAV pendant un déplacement vers la quarantaine (et gardé par clamonacc tant qu'il tourne). Le motif `*` ne prend pas les fichiers dont le nom commence par un point.
 **Correction :** suppression du verrou orphelin. Le script de métriques ignore désormais les fichiers cachés (`! -name '.*'`).
 
-### 10.13 ClamUI : « os error 2 » et entrées `deleted` toujours affichées
+### 11.13 ClamUI : « os error 2 » et entrées `deleted` toujours affichées
 
 **Symptôme :** **Supprimer** échoue avec `Aucun fichier ou dossier de ce nom (os error 2)`. Après le passage des entrées à `deleted` dans la base, ClamUI les affiche toujours comme « Mis en quarantaine ».
 **Cause :** les fichiers avaient été déplacés par le scan hebdomadaire, et ClamUI affiche toutes les lignes de sa table, quel que soit leur état.
 **Correction :** ClamUI fermé, sauvegarde de `quarantine.db`, puis `DELETE FROM quarantine WHERE state='deleted'`, lancé en tant que `thibaut`.
 
-### 10.14 Alertes « data source not found »
+### 11.14 Alertes « data source not found »
 
 **Symptôme :** les 7 règles affichent `failed to build query 'A': data source not found`.
 **Cause :** la consigne donnait la commande d'exemple `sed -i "s/PROM_UID/TON_UID/"`. Lancée telle quelle, elle a écrit `TON_UID` dans le fichier, et le `sed` suivant, avec le vrai UID, n'a plus trouvé de `PROM_UID` à remplacer.
 **Correction :** récupération de l'UID par l'API et remplacement automatique, sans recopie à la main (voir § 9.3). Vérification : `grep datasourceUid … | sort | uniq -c` doit donner 7 × `__expr__` et 7 × le vrai UID.
 
-### 10.15 Gravité « Unknown » sur la page d'accueil
+### 11.15 Gravité « Unknown » sur la page d'accueil
 
 **Symptôme :** l'encadré **Firing alerts** affiche la gravité `Unknown`.
 **Cause :** Grafana ne reconnaît que l'étiquette `severity`, avec des valeurs comme `critical` ou `warning`. Mon fichier utilisait `severite: critique`.
 **Correction :** `sed -i 's/severite: critique/severity: critical/; s/severite: avertissement/severity: warning/'`, puis redémarrage de Grafana. Changer une étiquette crée une **nouvelle instance** d'alerte : dans l'historique, l'ancienne se termine en `Normal (MissingSeries)`.
 
-### 10.16 Tableau de bord en retard sur l'alerte
+### 11.16 Tableau de bord en retard sur l'alerte
 
 **Symptôme :** l'alerte est revenue en Normal, mais le tableau de bord affiche encore « Arrêté » quelques minutes de plus.
 **Cause :** sur une période de 24 h, une requête *range* n'a qu'un point toutes les quelques minutes, et la « dernière valeur » peut être ancienne.
 **Correction :** requêtes **instantanées** pour toutes les cases d'état (version 3 du tableau de bord).
 
-### 10.17 Fichier infecté non détecté par clamonacc après un `cp`
+### 11.17 Fichier infecté non détecté par clamonacc après un `cp`
 
 **Symptôme :** un fichier de test copié dans un dossier surveillé reste en place, sans `FOUND` dans le journal.
 **Cause :** avec `OnAccessPrevention yes`, l'analyse a lieu à l'**ouverture** du fichier. Pendant la copie, le fichier est encore vide quand il est ouvert.
 **Correction :** le test valable consiste à ouvrir le fichier (`cat` : ouverture bloquée). Pour analyser dès la création, il faut aussi `OnAccessExtraScanning yes` (§ 9.6).
 
+### 11.18 PowerShell : `-f` dans un appel de méthode
+
+**Symptôme :** `L'index (de base zéro) doit être supérieur ou égal à zéro et inférieur à la taille de la liste des arguments`, à la ligne `$membres.Add('…{0}…{1}…' -f a, b)`.
+**Cause :** dans les parenthèses d'un appel de méthode, la virgule sépare les **arguments de `.Add()`**. `-f` ne reçoit donc qu'une seule valeur.
+**Correction :** une double parenthèse, `.Add(( '…' -f a, b ))`. Grâce à `$ErrorActionPreference = 'Stop'`, le script s'était arrêté sans écrire de fichier incomplet.
+
+### 11.19 Dernière connexion fausse (« il y a 2 mois »)
+
+**Symptôme :** un utilisateur connecté à Grafana le matin apparaît connecté il y a 2 mois.
+**Cause :** l'attribut `lastLogon` n'enregistre pas les connexions LDAP simples. Seul `lastLogonTimestamp` les enregistre.
+**Correction :** le script prend le plus récent de `lastLogon` (sur tous les DC) et de `lastLogonTimestamp` (§ 10.3).
+
 ---
 
-## 11. Récapitulatif
+## 12. Récapitulatif
 
 ### Ports
 
@@ -1307,6 +1475,7 @@ sed -i '/^\[auth.ldap\]/,/^\[/ s/^;\(enabled = true\|config_file = \|allow_sign_
 | 9906 | clamav_exporter | ClamAV | Interrogé par Prometheus |
 | 3310 | clamd (TCP) | ClamAV | **Local uniquement** (`127.0.0.1`) |
 | 389 | LDAP de l'AD | AD-DC (10.2.121.2) | Interrogé par Grafana avec `svc-grafana` |
+| 9182 | windows_exporter | AD-DC (10.2.121.2) | Interrogé par Prometheus, **autorisé seulement depuis 10.2.121.15** |
 
 ### Fichiers
 
@@ -1318,6 +1487,9 @@ sed -i '/^\[auth.ldap\]/,/^\[/ s/^;\(enabled = true\|config_file = \|allow_sign_
 | [`/etc/grafana/ldap.toml`](config/ldap.toml) | SUPERVISION | Connexion à l'AD et groupes → rôles (`root:grafana`, `640`) |
 | [`/etc/grafana/provisioning/alerting/alertes-clamav.yaml`](config/alertes-clamav.yaml) | SUPERVISION | Les 7 règles d'alerte (`root:grafana`, `640`) |
 | [`config/dashboard-clamav.json`](config/dashboard-clamav.json) | Dépôt | Tableau de bord ClamAV, à importer dans Grafana |
+| [`config/dashboard-ad.json`](config/dashboard-ad.json) | Dépôt | Tableau de bord Active Directory, à importer dans Grafana |
+| [`C:\Scripts\ad_users_metrics.ps1`](scripts/ad_users_metrics.ps1) | AD-DC | Export des comptes AD (tâche « Prometheus - utilisateurs AD », SYSTEM, toutes les 5 min) |
+| `C:\Program Files\windows_exporter\textfile_inputs\ad_users.prom` | AD-DC | Métriques des comptes, lues par windows_exporter |
 | `/etc/systemd/system/scan-home-hebdo.service` | ClamAV | Scan hebdomadaire : `--move=/var/quarantaine` + exclusion de la quarantaine ClamUI |
 | `/etc/systemd/system/clamonacc.service` | ClamAV | Analyse en temps réel : `--move=/var/quarantaine` |
 | `/etc/clamav/clamd.conf` | ClamAV | `TCPSocket 3310`, `TCPAddr 127.0.0.1`, dossiers surveillés (`OnAccessIncludePath`), `OnAccessExtraScanning yes` |

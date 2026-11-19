@@ -33,7 +33,7 @@
     "to": "now"
   },
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "description": "Contrôleur de domaine gsblolo.local : services, comptes, groupes et activité (AP 1 GSBLOLO)",
   "annotations": {
     "list": []
@@ -82,7 +82,7 @@
     {
       "id": 2,
       "type": "stat",
-      "title": "Joignable",
+      "title": "État",
       "description": "Prometheus interroge windows_exporter (port 9182).",
       "datasource": {
         "type": "prometheus",
@@ -309,7 +309,7 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "Démarré depuis",
+      "title": "Allumé depuis",
       "description": "",
       "datasource": {
         "type": "prometheus",
@@ -374,7 +374,7 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "Services auto arrêtés",
+      "title": "Auto arrêtés",
       "description": "Services en démarrage automatique (hors démarrage différé ou sur déclencheur) qui sont arrêtés : anomalie probable.",
       "datasource": {
         "type": "prometheus",
@@ -443,7 +443,7 @@
     {
       "id": 7,
       "type": "stat",
-      "title": "Services en cours / installés",
+      "title": "Services",
       "description": "",
       "datasource": {
         "type": "prometheus",
@@ -533,7 +533,7 @@
     {
       "id": 9,
       "type": "stat",
-      "title": "Comptes actifs",
+      "title": "Actifs",
       "description": "",
       "datasource": {
         "type": "prometheus",
@@ -598,7 +598,7 @@
     {
       "id": 10,
       "type": "stat",
-      "title": "Comptes désactivés",
+      "title": "Désactivés",
       "description": "",
       "datasource": {
         "type": "prometheus",
@@ -663,7 +663,7 @@
     {
       "id": 11,
       "type": "stat",
-      "title": "Comptes verrouillés",
+      "title": "Verrouillés",
       "description": "Comptes bloqués après trop de mauvais mots de passe : tentative d'intrusion ou utilisateur qui a oublié son mot de passe.",
       "datasource": {
         "type": "prometheus",
@@ -732,7 +732,7 @@
     {
       "id": 12,
       "type": "stat",
-      "title": "Ordinateurs",
+      "title": "PC",
       "description": "",
       "datasource": {
         "type": "prometheus",
@@ -862,7 +862,7 @@
     {
       "id": 14,
       "type": "stat",
-      "title": "Script des comptes",
+      "title": "Script",
       "description": "Âge de la dernière exécution de ad_users_metrics.ps1 (tâche planifiée toutes les 5 min).",
       "datasource": {
         "type": "prometheus",
@@ -936,7 +936,7 @@
     {
       "id": 15,
       "type": "stat",
-      "title": "DC injoignables",
+      "title": "DC KO",
       "description": "Contrôleurs de domaine que le script n'a pas pu interroger pour la dernière connexion.",
       "datasource": {
         "type": "prometheus",
@@ -1955,7 +1955,8 @@
                 "value": null
               }
             ]
-          }
+          },
+          "noValue": "Aucun ✅"
         },
         "overrides": []
       },
