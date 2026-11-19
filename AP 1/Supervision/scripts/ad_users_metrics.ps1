@@ -40,7 +40,7 @@ function Metrique([string]$nom, [string]$type, [string]$aide) {
     $lignes.Add("# TYPE $nom $type")
 }
 
-# --- Dernière connexion réelle : lastLogon n'est pas répliqué, on prend le maximum de tous les DC
+# --- Dernière connexion : lastLogon n'est pas répliqué, on prend le maximum de tous les DC
 $dernierLogon = @{}
 $dcErreurs = 0
 $dcs = (Get-ADDomainController -Filter *).HostName
@@ -54,7 +54,7 @@ foreach ($dc in $dcs) {
 }
 
 # --- Comptes utilisateurs du domaine
-$proprietes = 'DisplayName', 'LockedOut', 'PasswordLastSet', 'PasswordNeverExpires', 'PasswordExpired', 'whenCreated', 'memberOf'
+$proprietes = 'DisplayName', 'LockedOut', 'PasswordLastSet', 'PasswordNeverExpires', 'PasswordExpired', 'whenCreated', 'memberOf', 'lastLogonTimestamp'
 $users = Get-ADUser -Filter * -Properties $proprietes | Sort-Object SamAccountName
 
 $def = [ordered]@{
@@ -63,7 +63,7 @@ $def = [ordered]@{
     'ad_user_password_expired'                    = 'gauge|1 si le mot de passe est expiré.'
     'ad_user_password_never_expires'              = 'gauge|1 si le mot de passe n''expire jamais.'
     'ad_user_password_last_set_timestamp_seconds' = 'gauge|Date du dernier changement de mot de passe (epoch, 0 si jamais).'
-    'ad_user_last_logon_timestamp_seconds'        = 'gauge|Dernière connexion, maximum de tous les DC (epoch, 0 si jamais).'
+    'ad_user_last_logon_timestamp_seconds'        = 'gauge|Dernière connexion : le plus récent de lastLogon (tous les DC) et lastLogonTimestamp (epoch, 0 si jamais).'
     'ad_user_created_timestamp_seconds'           = 'gauge|Date de création du compte (epoch).'
 }
 $valeurs = @{}
@@ -72,7 +72,9 @@ $membres = New-Object System.Collections.Generic.List[string]
 
 foreach ($u in $users) {
     $l = 'sam="{0}",nom="{1}",conteneur="{2}"' -f (Esc $u.SamAccountName), (Esc $u.Name), (Esc (Conteneur $u.DistinguishedName))
-    $logon = [int64]$dernierLogon[$u.SamAccountName]
+    # lastLogon (par DC) ignore les connexions LDAP simples (ex. Grafana) ; lastLogonTimestamp (répliqué)
+    # les voit, mais n'est mis à jour que tous les 9 à 14 jours : on garde le plus récent des deux.
+    $logon = [math]::Max([int64]$dernierLogon[$u.SamAccountName], [int64]$u.lastLogonTimestamp)
     $logonTs = if ($logon -gt 0) { [DateTimeOffset]::FromFileTime($logon).ToUnixTimeSeconds() } else { 0 }
 
     $valeurs['ad_user_enabled'].Add("ad_user_enabled{$l} $([int][bool]$u.Enabled)")
