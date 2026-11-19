@@ -13,4 +13,4 @@ Nice=19
 IOSchedulingClass=idle
 # clamscan renvoie 1 quand il trouve un virus : ce n'est pas un échec du service
 SuccessExitStatus=1
-ExecStart=/usr/bin/clamscan -r -i --move=/var/quarantaine --log=/var/log/clamav/scan-home-hebdo.log /home
+ExecStart=/usr/bin/clamscan -r -i --move=/var/quarantaine --exclude-dir=^/home/[^/]+/.var/app/io.github.linx_systems.ClamUI/data/clamui/quarantine --log=/var/log/clamav/scan-home-hebdo.log /home

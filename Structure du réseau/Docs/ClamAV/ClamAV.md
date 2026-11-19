@@ -504,7 +504,7 @@ Type=oneshot
 Nice=19
 IOSchedulingClass=idle
 SuccessExitStatus=1
-ExecStart=/usr/bin/clamscan -r -i --move=/var/quarantaine --log=/var/log/clamav/scan-home-hebdo.log /home
+ExecStart=/usr/bin/clamscan -r -i --move=/var/quarantaine --exclude-dir=^/home/[^/]+/.var/app/io.github.linx_systems.ClamUI/data/clamui/quarantine --log=/var/log/clamav/scan-home-hebdo.log /home
 ```
 
 | Directive | Rôle |
@@ -513,8 +513,13 @@ ExecStart=/usr/bin/clamscan -r -i --move=/var/quarantaine --log=/var/log/clamav/
 | `Nice=19` | Priorité CPU la plus basse. |
 | `IOSchedulingClass=idle` | Le scan n'utilise le disque que lorsqu'il est libre. |
 | `SuccessExitStatus=1` | `clamscan` renvoie `1` s'il trouve un virus. Sans cette ligne, systemd marquerait le service en échec. |
+| `--exclude-dir=…clamui/quarantine` | Exclut la quarantaine de ClamUI, rangée dans `/home/<utilisateur>/.var/app/…`. Sans cette exclusion, le scan reprend chaque semaine les fichiers déjà isolés par ClamUI. |
 
 Pour exclure les caches des utilisateurs, ajouter `--exclude-dir="^/home/[^/]+/\.cache"` avant `/home`.
+
+> ⚠️ **Erreurs corrigées le 19/11/2026**, découvertes grâce à la supervision Prometheus / Grafana (voir [AP 1 - Supervision](../../../AP%201/Supervision/Supervision.md)) :
+> - sur la VM, le service contenait `--move=/var/quarantine`, en orthographe anglaise. Les fichiers infectés partaient dans un deuxième dossier, que personne ne surveillait ;
+> - le scan du 15/11 a sorti de la quarantaine de ClamUI les 2 fichiers que ClamUI y avait isolés, ce qui a désynchronisé sa base. D'où l'ajout de `--exclude-dir`.
 
 ### 10.2 Le timer
 
