@@ -4,8 +4,8 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 
 > **Prérequis :** ClamAV et ClamUI sont déjà installés et fonctionnels sur la VM 812 (voir les documentations [ClamAV](../../Structure%20du%20r%C3%A9seau/Docs/ClamAV/ClamAV.md) et [ClamUI](../../Structure%20du%20r%C3%A9seau/Docs/ClamUI/ClamUI.md)).
 >
-> **Dates de réalisation :** 12/11/2026 (étapes 1 à 4), 13/11/2026 (étape 5) et 19/11/2026 (étape 6)
-> **État :** étapes 1 à 6 terminées. L'authentification AD, le tableau de bord et les alertes viendront ensuite (voir [l'avancement](README.md)).
+> **Dates de réalisation :** 12/11/2026 (étapes 1 à 4), 13/11/2026 (étape 5) et 19/11/2026 (étapes 6 et 7)
+> **État :** étapes 1 à 7 terminées. Le tableau de bord et les alertes viendront ensuite (voir [l'avancement](README.md)).
 
 ---
 
@@ -18,8 +18,9 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 5. [Étape 4 : l'exporter ClamAV](#5-étape-4--lexporter-clamav)
 6. [Étape 5 : script de métriques ClamAV et ClamUI](#6-étape-5--script-de-métriques-clamav-et-clamui)
 7. [Étape 6 : Grafana relié à Prometheus](#7-étape-6--grafana-relié-à-prometheus)
-8. [Dépannage : erreurs rencontrées](#8-dépannage--erreurs-rencontrées)
-9. [Récapitulatif](#9-récapitulatif)
+8. [Étape 7 : connexion à Grafana avec l'Active Directory](#8-étape-7--connexion-à-grafana-avec-lactive-directory)
+9. [Dépannage : erreurs rencontrées](#9-dépannage--erreurs-rencontrées)
+10. [Récapitulatif](#10-récapitulatif)
 
 ---
 
@@ -75,7 +76,7 @@ Pendant l'installation, l'installeur lance automatiquement une configuration **D
 | DNS | Mon contrôleur de domaine (`10.2.121.2`) |
 | Utilisateur | `supervison1` |
 
-Au premier redémarrage, la VM est restée bloquée sur `Booting from Hard Disk...` : GRUB n'avait pas été installé sur le disque (voir [§ 8.1](#81-booting-from-hard-disk-bloqué-grub-absent)).
+Au premier redémarrage, la VM est restée bloquée sur `Booting from Hard Disk...` : GRUB n'avait pas été installé sur le disque (voir [§ 9.1](#91-booting-from-hard-disk-bloqué-grub-absent)).
 
 ![Démarrage bloqué : GRUB absent](images/02-erreur-grub.png)
 
@@ -102,7 +103,7 @@ ssh supervison1@10.2.121.15
 
 ### 2.3 Poste de travail
 
-Mon PC Windows est sur un autre réseau et n'a pas de route vers 10.2.121.0/24 (voir [§ 8.2](#82-pc-windows-sans-route-vers-le-réseau-du-labo)). Je travaille donc depuis la **VM ClamAV**, qui a un bureau : son navigateur me sert pour l'interface de Prometheus, et son terminal pour me connecter en SSH à SUPERVISION.
+Mon PC Windows est sur un autre réseau et n'a pas de route vers 10.2.121.0/24 (voir [§ 9.2](#92-pc-windows-sans-route-vers-le-réseau-du-labo)). Je travaille donc depuis la **VM ClamAV**, qui a un bureau : son navigateur me sert pour l'interface de Prometheus, et son terminal pour me connecter en SSH à SUPERVISION.
 
 ![SSH vers SUPERVISION depuis la VM ClamAV](images/05-ssh-depuis-vm-clamav.png)
 
@@ -183,7 +184,7 @@ Au moment de cette étape, la VM ClamAV avait l'adresse `10.2.121.10` :
 
 ![IP de la VM ClamAV](images/07-ip-vm-clamav.png)
 
-Le test depuis SUPERVISION a d'abord échoué parce que `curl` n'était pas installé (voir [§ 8.3](#83-curl-absent-sur-supervision)) :
+Le test depuis SUPERVISION a d'abord échoué parce que `curl` n'était pas installé (voir [§ 9.3](#93-curl-absent-sur-supervision)) :
 
 ![curl absent](images/16-erreur-curl.png)
 
@@ -246,7 +247,7 @@ L'adresse n'est plus `dynamic`, la route par défaut est maintenant `proto stati
 
 ### 4.4 Ajout de la cible dans Prometheus
 
-J'ai voulu remplacer `10.2.121.10` par `10.2.121.12` avec `sed`, mais `grep` ne trouvait aucune ligne : la cible ClamAV n'avait **jamais été ajoutée** au fichier (voir [§ 8.4](#84-cible-clamav-absente-de-prometheusyml)). Prometheus n'avait donc qu'une cible `node` :
+J'ai voulu remplacer `10.2.121.10` par `10.2.121.12` avec `sed`, mais `grep` ne trouvait aucune ligne : la cible ClamAV n'avait **jamais été ajoutée** au fichier (voir [§ 9.4](#94-cible-clamav-absente-de-prometheusyml)). Prometheus n'avait donc qu'une cible `node` :
 
 ![sed sans effet](images/27-promtool-sans-cible.png)
 ![Seulement 1 cible node](images/28-targets-1-sur-1.png)
@@ -398,7 +399,7 @@ Requêtes de vérification :
 | `clamav_up` | 1 | `clamd` répond |
 | `clamav_db_version` | 28181 | Version de la base `daily` |
 | `(time() - clamav_db_timestamp_seconds) / 3600` | 9,28 | Âge des signatures en heures, futur seuil d'alerte |
-| `clamav_memory_used_bytes / 1024 / 1024` | *no data* | Voir [§ 8.5](#85-clamav_memory_used_bytes-sans-données) |
+| `clamav_memory_used_bytes / 1024 / 1024` | *no data* | Voir [§ 9.5](#95-clamav_memory_used_bytes-sans-données) |
 
 ![clamav_up](images/42-clamav-up.png)
 ![Version de la base](images/43-db-version.png)
@@ -490,7 +491,7 @@ curl -s localhost:9100/metrics | grep -E '^clamav_'
 La première capture montre le fichier écrit par le script, la seconde les mêmes valeurs exposées par node_exporter sur le port 9100 :
 - **Tri des CV :** 0 CV en attente, 1 sain (`ok.txt`), 1 infecté (`eicar.txt`). Le journal compte 2 analyses, dont 1 infectée.
 - **Scan hebdo :** 4 305 fichiers analysés, 0 infecté. `1794484467` est une date au format epoch (secondes depuis 1970), soit le 12/11 à 12:54.
-- **Services :** `clamav-daemon` et `clamonacc` à 1, mais **`clamav-freshclam` à 0** (voir [§ 8.6](#86-clamav-freshclam-arrêté-et-désactivé)).
+- **Services :** `clamav-daemon` et `clamonacc` à 1, mais **`clamav-freshclam` à 0** (voir [§ 9.6](#96-clamav-freshclam-arrêté-et-désactivé)).
 - node_exporter trie les métriques par ordre alphabétique et écrit les grands nombres en notation scientifique (`1.794484467e+09` = 1794484467).
 
 Deux corrections ont suivi ce premier lancement :
@@ -505,7 +506,7 @@ systemctl enable --now clamav-freshclam
 ![freshclam inactive et disabled](images/53-freshclam-disabled.png)
 ![freshclam réactivé](images/54-freshclam-enable.png)
 
-**Taille de la quarantaine corrigée :** `clamav_quarantine_bytes` valait 4096 avec une quarantaine vide (voir [§ 8.7](#87-taille-de-quarantaine-à-4096-octets-pour-un-dossier-vide)).
+**Taille de la quarantaine corrigée :** `clamav_quarantine_bytes` valait 4096 avec une quarantaine vide (voir [§ 9.7](#97-taille-de-quarantaine-à-4096-octets-pour-un-dossier-vide)).
 
 ![quarantine_bytes à 0 et freshclam à 1](images/55-quarantaine-bytes-corrige.png)
 
@@ -643,7 +644,7 @@ J'analyse `/home/thibaut/Téléchargements`, puis je mets les menaces en quarant
 
 L'analyse de 14:24:24 trouve **2 menaces** :
 - `test-supervision.exe` (`Clamav.Test.File-6`), le fichier que je venais de copier ;
-- `eicar.txt` (`Eicar-Test-Signature`), le fichier EICAR de la veille, resté sur place car il n'avait pas été mis en quarantaine (voir [§ 8.8](#88-fichier-eicar-non-bloqué-par-clamonacc)).
+- `eicar.txt` (`Eicar-Test-Signature`), le fichier EICAR de la veille, resté sur place car il n'avait pas été mis en quarantaine (voir [§ 9.8](#98-fichier-eicar-non-bloqué-par-clamonacc)).
 
 Après le passage du cron, Prometheus affiche :
 
@@ -753,46 +754,212 @@ Grafana affiche donc bien toutes les métriques collectées par Prometheus : cel
 
 ---
 
-## 8. Dépannage : erreurs rencontrées
+## 8. Étape 7 : connexion à Grafana avec l'Active Directory
 
-### 8.1 `Booting from Hard Disk...` bloqué (GRUB absent)
+Au lieu de créer des comptes locaux dans Grafana, les utilisateurs se connectent avec **leur compte Windows** de l'Active Directory `gsblolo.local` (contrôleur de domaine `10.2.121.2`). Les droits dans Grafana sont donnés par l'appartenance à des **groupes AD** : tout se gère depuis l'AD.
+
+### 8.1 Principe
+
+```
+Navigateur ──(L.Bodet + mot de passe)──▶ Grafana (SUPERVISION)
+                                          │ 1. se connecte à l'AD avec svc-grafana
+                                          │ 2. cherche (sAMAccountName=L.Bodet) dans l'OU Utilisateurs
+                                          │ 3. vérifie le mot de passe saisi auprès de l'AD
+                                          │ 4. lit ses groupes (memberOf) -> rôle Grafana
+                                          ▼
+                                 AD-DC 10.2.121.2 (LDAP, port 389)
+```
+
+| Groupe AD | Rôle dans Grafana | Membres |
+|---|---|---|
+| `GG_Grafana_Admins` | **Admin** + administrateur du serveur Grafana | Bodet Loic |
+| `GG_Grafana_Lecteurs` | **Viewer** (consultation seule) | Les 7 autres utilisateurs de l'OU |
+
+Un utilisateur qui n'est dans **aucun** de ces groupes, ou qui est hors de l'OU `Utilisateurs`, ne peut pas se connecter.
+
+### 8.2 Préparation de l'AD
+
+Mes utilisateurs sont dans l'OU **Services → Utilisateurs**, soit `OU=Utilisateurs,OU=Services,DC=gsblolo,DC=local`, et mes groupes dans `OU=Groupes,OU=Services,…`.
+
+![OU Services / Utilisateurs](images/92-ad-ou-utilisateurs.png)
+
+Sur le contrôleur de domaine, en PowerShell administrateur, je vérifie le chemin de l'OU et les identifiants de connexion (`SamAccountName`, de la forme `L.Bodet`) :
+
+```powershell
+Get-ADUser -Filter * -SearchBase "OU=Utilisateurs,OU=Services,DC=gsblolo,DC=local" | Format-Table Name,SamAccountName
+```
+
+![Utilisateurs de l'OU](images/93-ad-liste-utilisateurs.png)
+
+**Le compte de service.** Grafana doit se connecter à l'AD avec un compte à lui pour chercher les utilisateurs. Son mot de passe est écrit en clair dans un fichier sur SUPERVISION : je n'utilise donc **pas** le compte `Administrateur` du domaine. Si ce fichier était lu, tout le domaine serait compromis. Je crée un compte dédié **sans aucun droit particulier**, car un simple utilisateur peut déjà lire l'annuaire. C'est le principe du **moindre privilège**.
+
+```powershell
+New-ADUser -Name "svc-grafana" -SamAccountName "svc-grafana" -UserPrincipalName "svc-grafana@gsblolo.local" -Path "CN=Users,DC=gsblolo,DC=local" -Description "Compte de service LDAP pour Grafana (lecture seule)" -AccountPassword (Read-Host -AsSecureString "Mot de passe de svc-grafana") -Enabled $true -PasswordNeverExpires $true -CannotChangePassword $true
+
+New-ADGroup -Name "GG_Grafana_Admins" -GroupScope Global -GroupCategory Security -Path "OU=Groupes,OU=Services,DC=gsblolo,DC=local" -Description "Administrateurs de Grafana"
+New-ADGroup -Name "GG_Grafana_Lecteurs" -GroupScope Global -GroupCategory Security -Path "OU=Groupes,OU=Services,DC=gsblolo,DC=local" -Description "Lecteurs de Grafana (consultation)"
+```
+
+| Choix | Raison |
+|---|---|
+| `svc-grafana` dans `CN=Users`, hors de l'OU Utilisateurs | Le compte de service ne doit pas pouvoir se connecter à Grafana |
+| `Read-Host -AsSecureString` | Le mot de passe n'apparaît ni à l'écran ni dans l'historique PowerShell |
+| `PasswordNeverExpires` | Évite que la connexion tombe en panne à l'expiration du mot de passe |
+| Groupes `GG_…` globaux de sécurité | Convention de nommage des groupes globaux |
+
+![Création du compte et des groupes](images/94-ad-creation-compte-groupes.png)
+
+```powershell
+Add-ADGroupMember -Identity "GG_Grafana_Admins" -Members (Get-ADUser -Filter "Name -eq 'Bodet Loic'")
+Add-ADGroupMember -Identity "GG_Grafana_Lecteurs" -Members (Get-ADUser -Filter "Name -ne 'Bodet Loic'" -SearchBase "OU=Utilisateurs,OU=Services,DC=gsblolo,DC=local")
+```
+
+![Ajout des membres](images/95-ad-ajout-membres.png)
+![Vérification des groupes et du compte de service](images/96-ad-verification.png)
+
+### 8.3 Test de l'annuaire depuis SUPERVISION
+
+Avant de configurer Grafana, je vérifie avec `ldapsearch` que SUPERVISION lit bien l'annuaire avec `svc-grafana`. Ce sont exactement les opérations que Grafana fera ensuite. Si ce test réussit, il reste seulement à recopier les paramètres dans Grafana. S'il échoue, le problème vient du réseau ou de l'AD, pas de Grafana.
+
+```bash
+apt install -y ldap-utils
+ldapsearch -x -H ldap://10.2.121.2 -D "svc-grafana@gsblolo.local" -W \
+  -b "OU=Utilisateurs,OU=Services,DC=gsblolo,DC=local" "(sAMAccountName=L.Bodet)" cn sAMAccountName memberOf
+```
+
+| Option | Rôle |
+|---|---|
+| `-x` | Authentification simple, par identifiant et mot de passe |
+| `-H ldap://10.2.121.2` | Contrôleur de domaine, port 389 |
+| `-D` / `-W` | Compte qui se connecte, et demande de son mot de passe sans l'afficher |
+| `-b` | Où chercher : l'OU Utilisateurs |
+| `(sAMAccountName=…)` | Qui chercher |
+
+![Installation de ldap-utils](images/97-install-ldap-utils.png)
+![L.Bodet membre de GG_Grafana_Admins](images/98-ldapsearch-lbodet.png)
+![T.Huet membre de GG_Grafana_Lecteurs](images/99-ldapsearch-thuet.png)
+
+**Résultat :** `result: 0 Success`. `L.Bodet` est membre de `GG_Grafana_Admins` (et de `DSI`), `T.Huet` de `GG_Grafana_Lecteurs`. Une ligne `memberOf::` (deux fois `:`) est une valeur encodée en base64 par `ldapsearch`, parce que le nom du groupe contient des accents.
+
+### 8.4 Configuration de Grafana
+
+**Activation de LDAP** dans `/etc/grafana/grafana.ini` (après une copie de sauvegarde en `.bak`), section `[auth.ldap]` :
+
+```ini
+[auth.ldap]
+enabled = true
+config_file = /etc/grafana/ldap.toml
+allow_sign_up = true
+```
+
+`allow_sign_up = true` permet à Grafana de créer le compte d'un utilisateur AD à sa première connexion.
+
+![Lignes encore en commentaire](images/100-grafana-ini-points-virgules.png)
+![Section [auth.ldap] corrigée](images/105-grafana-ini-corrige.png)
+
+Ma première modification n'avait pas enlevé les `;` en début de ligne, donc LDAP restait désactivé (voir [§ 9.9](#99-ldap-non-activé--lignes-restées-en-commentaire)).
+
+**Paramètres de connexion** dans `/etc/grafana/ldap.toml`. Le modèle, sans le mot de passe, est dans [`config/ldap.toml`](config/ldap.toml) :
+
+| Paramètre | Valeur | Rôle |
+|---|---|---|
+| `host` / `port` | `10.2.121.2` / `389` | Contrôleur de domaine |
+| `bind_dn` / `bind_password` | `svc-grafana@gsblolo.local` / *(secret)* | Compte de service |
+| `search_filter` | `(sAMAccountName=%s)` | `%s` est remplacé par l'identifiant saisi |
+| `search_base_dns` | `OU=Utilisateurs,OU=Services,…` | Seuls les comptes de cette OU sont cherchés |
+| `[servers.attributes]` | `givenName`, `sn`, `sAMAccountName`, `memberOf`, `mail` | Champs AD recopiés dans le profil Grafana |
+| `[[servers.group_mappings]]` | `GG_Grafana_Admins` → Admin, `GG_Grafana_Lecteurs` → Viewer | Groupes AD → rôles |
+
+![ldap.toml (1), ligne du mot de passe masquée](images/103-ldap-toml-1.png)
+![ldap.toml (2)](images/104-ldap-toml-2.png)
+
+J'ai d'abord écrit le fichier avec `A_REMPLACER` à la place du mot de passe, puis j'ai mis le vrai mot de passe avec `nano`. Sinon, il serait resté dans l'historique de bash. Le fichier est ensuite protégé :
+
+```bash
+chown root:grafana /etc/grafana/ldap.toml && chmod 640 /etc/grafana/ldap.toml
+systemctl restart grafana-server
+```
+
+![Droits du fichier : root:grafana 640](images/101-ldap-toml-droits.png)
+![Redémarrage avant correction : aucune ligne LDAP](images/102-grafana-restart-sans-ldap.png)
+![Redémarrage après correction](images/106-grafana-restart.png)
+
+### 8.5 Tests de connexion
+
+| Test | Compte | Résultat |
+|---|---|---|
+| Administrateur | `L.Bodet` | Connecté, menu **Administration** disponible, compte créé avec l'origine **LDAP** et l'adresse `l.bodet@gsblolo.local` lue dans l'AD |
+| Lecteur | `T.Huet` | Connecté avec le rôle **Viewer** dans *Main Org.* |
+| Refus | `svc-grafana` | **Refusé** : « Invalid username or password » |
+
+![Connexion de L.Bodet](images/107-connexion-lbodet.png)
+![Menu Administration (admin)](images/108-menu-administration.png)
+![Utilisateur l.bodet créé avec l'origine LDAP](images/109-users-ldap.png)
+![T.Huet : rôle Viewer](images/110-profil-thuet-viewer.png)
+![svc-grafana refusé](images/111-refus-svc-grafana.png)
+
+Le journal de Grafana confirme le fonctionnement :
+
+```bash
+journalctl -u grafana-server --since "-5min" --no-pager | grep -iE "ldap|login|auth"
+```
+
+![Journal (1)](images/112-journal-ldap-1.png)
+![Journal (2)](images/113-journal-ldap-2.png)
+
+| Ligne du journal | Signification |
+|---|---|
+| `Cannot bind user CN=Huet Thibault… invalid username or password` | Compte trouvé, mais l'AD a refusé le mot de passe saisi : c'est **l'AD** qui vérifie les mots de passe, Grafana ne les stocke pas |
+| `did not find a user` (pour `svc-grafana`) | Le compte existe dans l'AD, mais il est hors de l'OU cherchée, donc il est ignoré |
+
+L'écran affiche le même message dans les deux cas : un attaquant ne peut pas savoir si un compte existe.
+
+> 💡 Le compte `admin` local de Grafana reste utilisable : c'est le **compte de secours** si l'AD ne répond plus.
+
+> ⚠️ **Limite :** en LDAP sur le port 389, le mot de passe saisi passe **en clair** entre SUPERVISION et le contrôleur de domaine. Amélioration à prévoir : **LDAPS** (port 636, chiffré), qui demande un certificat sur le contrôleur de domaine.
+
+---
+
+## 9. Dépannage : erreurs rencontrées
+
+### 9.1 `Booting from Hard Disk...` bloqué (GRUB absent)
 
 **Symptôme :** après l'installation, la VM reste bloquée sur `Booting from Hard Disk...` (capture 02).
 **Cause :** le chargeur de démarrage GRUB n'avait pas été installé sur le disque.
 **Correction :** démarrage sur l'ISO Debian en mode de secours (*Advanced options → Rescue mode*), puis réinstallation de GRUB sur le disque de la VM.
 
-### 8.2 PC Windows sans route vers le réseau du labo
+### 9.2 PC Windows sans route vers le réseau du labo
 
 **Symptôme :** impossible de joindre 10.2.121.0/24 depuis mon PC.
 **Cause :** le PC est sur un autre réseau, sans route vers le VLAN 800.
 **Contournement :** je travaille depuis la VM ClamAV (navigateur pour Prometheus, terminal pour SSH).
 
-### 8.3 `curl` absent sur SUPERVISION
+### 9.3 `curl` absent sur SUPERVISION
 
 **Symptôme :** `-bash: curl : commande introuvable`, puis `E: L'opération curl n'est pas valable` (capture 16).
 **Cause :** Debian minimal n'installe pas `curl`, et `apt curl` n'est pas une commande valide.
 **Correction :** `apt install -y curl`.
 
-### 8.4 Cible ClamAV absente de `prometheus.yml`
+### 9.4 Cible ClamAV absente de `prometheus.yml`
 
 **Symptôme :** `sed` ne modifie rien et `grep -n "10.2.121"` ne trouve aucune ligne. Targets affiche `node (1/1 up)` et les requêtes sur `machine="clamav"` renvoient *no data* (captures 27 à 29).
 **Cause :** la cible `10.2.121.x:9100` n'avait jamais été ajoutée au fichier.
 **Correction :** réécriture de la section `scrape_configs` avec les deux cibles (capture 30).
 
-### 8.5 `clamav_memory_used_bytes` sans données
+### 9.5 `clamav_memory_used_bytes` sans données
 
 **Symptôme :** *no data* sur `clamav_memory_used_bytes` (capture 45).
 **Cause probable :** `clamd` ne renvoie pas ses statistiques mémoire à l'exporter sur cette version. La mémoire de la VM reste visible avec les métriques `node_memory_*`.
 **Statut :** non bloquant, à approfondir.
 
-### 8.6 `clamav-freshclam` arrêté et désactivé
+### 9.6 `clamav-freshclam` arrêté et désactivé
 
 **Symptôme :** `clamav_service_active{service="clamav-freshclam"} 0`. `systemctl status` affiche `inactive (dead)` et **`disabled`**, et `freshclam.log` n'avait plus bougé depuis le 12/11 (captures 51 et 53).
 **Cause :** le service avait été arrêté et désactivé. C'est souvent le cas quand on lance `freshclam` à la main, car il faut d'abord arrêter le service (erreur « log is locked »). Comme il était `disabled`, il ne serait jamais reparti, même au redémarrage.
 **Correction :** `systemctl enable --now clamav-freshclam` (capture 54).
 **À retenir :** c'est **la supervision qui a révélé ce problème**. Sans elle, la base de signatures aurait vieilli sans que personne ne le voie.
 
-### 8.7 Taille de quarantaine à 4096 octets pour un dossier vide
+### 9.7 Taille de quarantaine à 4096 octets pour un dossier vide
 
 **Symptôme :** `clamav_quarantine_files 0` mais `clamav_quarantine_bytes 4096`.
 **Cause :** `du -sb` compte aussi la taille du dossier lui-même (4 096 octets sur ext4).
@@ -802,15 +969,25 @@ Grafana affiche donc bien toutes les métriques collectées par Prometheus : cel
 find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 ```
 
-### 8.8 Fichier EICAR non bloqué par clamonacc
+### 9.8 Fichier EICAR non bloqué par clamonacc
 
 **Symptôme :** un fichier EICAR est resté dans `/home/thibaut/Téléchargements` depuis le 12/11 sans être bloqué par l'analyse en temps réel.
 **Cause probable :** d'après ma configuration ClamAV, clamonacc surveille `/home/flo/Téléchargements` et `/var/www/data/cv_incoming`, mais pas les Téléchargements de `thibaut`.
 **À faire :** vérifier avec `grep OnAccessIncludePath /etc/clamav/clamd.conf`, ajouter `OnAccessIncludePath /home/thibaut/Téléchargements`, puis redémarrer `clamav-daemon` et `clamonacc`.
 
+### 9.9 LDAP non activé : lignes restées en commentaire
+
+**Symptôme :** après le redémarrage, `journalctl … | grep -i ldap` n'affiche rien (capture 102).
+**Cause :** dans `grafana.ini`, j'avais changé les valeurs mais laissé le `;` en début de ligne (`;enabled = true`). Le `;` met la ligne en commentaire, donc Grafana l'ignorait (capture 100).
+**Correction :** suppression du `;` sur les trois lignes de la section `[auth.ldap]`, puis redémarrage :
+
+```bash
+sed -i '/^\[auth.ldap\]/,/^\[/ s/^;\(enabled = true\|config_file = \|allow_sign_up = true\)/\1/' /etc/grafana/grafana.ini
+```
+
 ---
 
-## 9. Récapitulatif
+## 10. Récapitulatif
 
 ### Ports
 
@@ -821,6 +998,7 @@ find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 | 9100 | node_exporter | SUPERVISION et ClamAV | Interrogé par Prometheus |
 | 9906 | clamav_exporter | ClamAV | Interrogé par Prometheus |
 | 3310 | clamd (TCP) | ClamAV | **Local uniquement** (`127.0.0.1`) |
+| 389 | LDAP de l'AD | AD-DC (10.2.121.2) | Interrogé par Grafana avec `svc-grafana` |
 
 ### Fichiers
 
@@ -828,7 +1006,8 @@ find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 |---|---|---|
 | `/etc/prometheus/prometheus.yml` | SUPERVISION | Cibles de Prometheus |
 | `/etc/apt/sources.list.d/grafana.list` | SUPERVISION | Dépôt APT de Grafana (clé : `/etc/apt/keyrings/grafana.gpg`) |
-| `/etc/grafana/grafana.ini` | SUPERVISION | Configuration de Grafana (utilisée à l'étape 7) |
+| `/etc/grafana/grafana.ini` | SUPERVISION | Configuration de Grafana (section `[auth.ldap]` activée) |
+| [`/etc/grafana/ldap.toml`](config/ldap.toml) | SUPERVISION | Connexion à l'AD et groupes → rôles (`root:grafana`, `640`) |
 | `/etc/clamav/clamd.conf` | ClamAV | `TCPSocket 3310`, `TCPAddr 127.0.0.1` |
 | `/etc/systemd/system/clamav-daemon.socket.d/tcp.conf` | ClamAV | Port TCP du socket systemd de clamd |
 | `/usr/local/bin/clamav_exporter` | ClamAV | Binaire de l'exporter (v2.1.13) |

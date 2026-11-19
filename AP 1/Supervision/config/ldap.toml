@@ -1,0 +1,34 @@
+# /etc/grafana/ldap.toml  (root:grafana, chmod 640)
+# Connexion de Grafana à l'Active Directory gsblolo.local
+# Le vrai mot de passe de svc-grafana n'est PAS dans le dépôt.
+[[servers]]
+host = "10.2.121.2"
+port = 389
+use_ssl = false
+start_tls = false
+timeout = 10
+
+# Compte de service (lecture seule)
+bind_dn = "svc-grafana@gsblolo.local"
+bind_password = "A_REMPLACER"
+
+# Recherche de l'utilisateur par son identifiant Windows (ex. L.Bodet)
+search_filter = "(sAMAccountName=%s)"
+search_base_dns = ["OU=Utilisateurs,OU=Services,DC=gsblolo,DC=local"]
+
+[servers.attributes]
+name = "givenName"
+surname = "sn"
+username = "sAMAccountName"
+member_of = "memberOf"
+email = "mail"
+
+# Groupes AD -> rôles Grafana (un utilisateur hors de ces groupes est refusé)
+[[servers.group_mappings]]
+group_dn = "CN=GG_Grafana_Admins,OU=Groupes,OU=Services,DC=gsblolo,DC=local"
+org_role = "Admin"
+grafana_admin = true
+
+[[servers.group_mappings]]
+group_dn = "CN=GG_Grafana_Lecteurs,OU=Groupes,OU=Services,DC=gsblolo,DC=local"
+org_role = "Viewer"
