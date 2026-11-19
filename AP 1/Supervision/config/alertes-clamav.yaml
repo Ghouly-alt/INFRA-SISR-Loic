@@ -34,7 +34,7 @@ groups:
         execErrState: Error
         for: 2m
         labels:
-          severite: critique
+          severity: critical
         annotations:
           summary: "{{ $labels.job }} {{ $labels.machine }} ne répond plus"
           description: "Prometheus n'arrive plus à interroger {{ $labels.instance }} (job {{ $labels.job }}) depuis 2 minutes : VM éteinte, service arrêté ou problème réseau."
@@ -65,7 +65,7 @@ groups:
         execErrState: Error
         for: 5m
         labels:
-          severite: critique
+          severity: critical
         annotations:
           summary: "Le service {{ $labels.service }} est arrêté"
           description: "systemctl is-active {{ $labels.service }} ne renvoie plus active depuis 5 minutes sur la VM ClamAV."
@@ -96,7 +96,7 @@ groups:
         execErrState: Error
         for: 5m
         labels:
-          severite: critique
+          severity: critical
         annotations:
           summary: "clamav_exporter n'arrive plus à joindre clamd"
           description: "Le démon clamd ne répond plus sur 127.0.0.1:3310 depuis 5 minutes : les analyses de ClamUI et de clamonacc ne fonctionnent plus."
@@ -127,7 +127,7 @@ groups:
         execErrState: Error
         for: 30m
         labels:
-          severite: avertissement
+          severity: warning
         annotations:
           summary: "Base de signatures vieille de {{ humanize $values.A.Value }} h"
           description: "La base de signatures n'a pas été mise à jour depuis plus de 48 h : vérifier le service clamav-freshclam et l'accès à Internet."
@@ -158,7 +158,7 @@ groups:
         execErrState: Error
         for: 5m
         labels:
-          severite: avertissement
+          severity: warning
         annotations:
           summary: "clamav_metrics.sh n'a pas tourné depuis plus de 15 minutes"
           description: "Le cron devrait lancer /usr/local/bin/clamav_metrics.sh toutes les 5 minutes. Les métriques de quarantaine, de tri des CV et de ClamUI ne sont plus à jour."
@@ -189,7 +189,7 @@ groups:
         execErrState: Error
         for: 0s
         labels:
-          severite: critique
+          severity: critical
         annotations:
           summary: "Nouvelle menace détectée sur {{ $labels.machine }}"
           description: "ClamUI, le tri des CV ou l'analyse en temps réel a détecté au moins une menace ces 15 dernières minutes. Voir le tableau de bord ClamAV et la quarantaine."
@@ -220,7 +220,7 @@ groups:
         execErrState: Error
         for: 0s
         labels:
-          severite: critique
+          severity: critical
         annotations:
           summary: "Le scan hebdomadaire de /home a trouvé {{ $values.A.Value }} fichier(s) infecté(s)"
           description: "Le dernier scan de /home (moins de 24 h) a déplacé des fichiers dans /var/quarantaine. Voir /var/log/clamav/scan-home-hebdo.log."
