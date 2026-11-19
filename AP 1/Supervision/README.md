@@ -1,6 +1,6 @@
 # Supervision Prometheus / Grafana - AP 1 GSBLOLO
 
-> 📘 **Documentation détaillée : [Supervision.md](Supervision.md)** (étapes 1 à 5, avec captures). Cette page résume l'avancement ; la doc sera complétée au fil des étapes suivantes.
+> 📘 **Documentation détaillée : [Supervision.md](Supervision.md)** (étapes 1 à 6, avec captures). Cette page résume l'avancement ; la doc sera complétée au fil des étapes suivantes.
 
 Je mets en place une supervision de mon infrastructure avec **Prometheus** (collecte des métriques) et **Grafana** (tableaux de bord). Le premier objectif est de superviser l'antivirus **ClamAV** et son interface **ClamUI**.
 
@@ -8,7 +8,7 @@ Je mets en place une supervision de mon infrastructure avec **Prometheus** (coll
 
 | VM | Nom | IP | Rôle |
 | --- | --- | --- | --- |
-| 804 | SUPERVISION | 10.2.121.15 (fixe) | Prometheus, puis Grafana |
+| 804 | SUPERVISION | 10.2.121.15 (fixe) | Prometheus, Grafana (port 3000) |
 | 812 | Client-Linux-Debian | 10.2.121.12 (fixe) | ClamAV, ClamUI, node_exporter, clamav_exporter |
 
 ## Avancement
@@ -20,7 +20,7 @@ Je mets en place une supervision de mon infrastructure avec **Prometheus** (coll
 | 3 | node_exporter sur la VM ClamAV, passage de la VM ClamAV en IP fixe | ✅ |
 | 4 | clamav_exporter 2.1.13 (clamd en TCP sur 127.0.0.1:3310) | ✅ |
 | 5 | Script de métriques : scans, quarantaine, tri des CV, ClamUI | ✅ |
-| 6 | Grafana relié à Prometheus | ⏳ |
+| 6 | Grafana 13.3.1 relié à Prometheus | ✅ |
 | 7 | Authentification Grafana via l'Active Directory (LDAP) | ⏳ |
 | 8 | Tableau de bord ClamAV et alertes | ⏳ |
 

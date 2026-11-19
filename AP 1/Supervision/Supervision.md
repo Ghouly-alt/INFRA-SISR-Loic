@@ -4,8 +4,8 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 
 > **Prérequis :** ClamAV et ClamUI sont déjà installés et fonctionnels sur la VM 812 (voir les documentations [ClamAV](../../Structure%20du%20r%C3%A9seau/Docs/ClamAV/ClamAV.md) et [ClamUI](../../Structure%20du%20r%C3%A9seau/Docs/ClamUI/ClamUI.md)).
 >
-> **Dates de réalisation :** 12/11/2026 (étapes 1 à 4) et 13/11/2026 (étape 5)
-> **État :** étapes 1 à 5 terminées. Grafana, l'authentification AD et les alertes viendront ensuite (voir [l'avancement](README.md)).
+> **Dates de réalisation :** 12/11/2026 (étapes 1 à 4), 13/11/2026 (étape 5) et 19/11/2026 (étape 6)
+> **État :** étapes 1 à 6 terminées. L'authentification AD, le tableau de bord et les alertes viendront ensuite (voir [l'avancement](README.md)).
 
 ---
 
@@ -17,8 +17,9 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 4. [Étape 3 : superviser la VM ClamAV](#4-étape-3--superviser-la-vm-clamav)
 5. [Étape 4 : l'exporter ClamAV](#5-étape-4--lexporter-clamav)
 6. [Étape 5 : script de métriques ClamAV et ClamUI](#6-étape-5--script-de-métriques-clamav-et-clamui)
-7. [Dépannage : erreurs rencontrées](#7-dépannage--erreurs-rencontrées)
-8. [Récapitulatif](#8-récapitulatif)
+7. [Étape 6 : Grafana relié à Prometheus](#7-étape-6--grafana-relié-à-prometheus)
+8. [Dépannage : erreurs rencontrées](#8-dépannage--erreurs-rencontrées)
+9. [Récapitulatif](#9-récapitulatif)
 
 ---
 
@@ -29,7 +30,7 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 | **Prometheus** | Interroge régulièrement des « exporters » en HTTP, stocke les valeurs reçues (base de séries temporelles) et permet de les interroger avec le langage **PromQL**. |
 | **node_exporter** | Exporter système : CPU, mémoire, disques, réseau… Il sait aussi lire des fichiers `.prom` déposés dans un dossier (**collecteur textfile**). |
 | **clamav_exporter** | Interroge le démon `clamd` et expose son état : démon joignable, version de la base de signatures, etc. |
-| **Grafana** *(étape 6)* | Tableaux de bord graphiques à partir des données de Prometheus. |
+| **Grafana** | Tableaux de bord graphiques à partir des données de Prometheus. |
 
 J'ai choisi une **VM dédiée** à la supervision : si la VM ClamAV tombe, la supervision continue de fonctionner et peut le signaler.
 
@@ -51,7 +52,7 @@ J'ai choisi une **VM dédiée** à la supervision : si la VM ClamAV tombe, la su
 
 | VM | Nom | IP | Rôle |
 |---|---|---|---|
-| 804 | SUPERVISION | 10.2.121.15 (fixe) | Prometheus, node_exporter (puis Grafana) |
+| 804 | SUPERVISION | 10.2.121.15 (fixe) | Prometheus, node_exporter, Grafana |
 | 812 | Client-Linux-Debian | 10.2.121.12 (fixe) | ClamAV, ClamUI, node_exporter, clamav_exporter, script de métriques |
 
 ---
@@ -74,7 +75,7 @@ Pendant l'installation, l'installeur lance automatiquement une configuration **D
 | DNS | Mon contrôleur de domaine (`10.2.121.2`) |
 | Utilisateur | `supervison1` |
 
-Au premier redémarrage, la VM est restée bloquée sur `Booting from Hard Disk...` : GRUB n'avait pas été installé sur le disque (voir [§ 7.1](#71-booting-from-hard-disk-bloqué-grub-absent)).
+Au premier redémarrage, la VM est restée bloquée sur `Booting from Hard Disk...` : GRUB n'avait pas été installé sur le disque (voir [§ 8.1](#81-booting-from-hard-disk-bloqué-grub-absent)).
 
 ![Démarrage bloqué : GRUB absent](images/02-erreur-grub.png)
 
@@ -101,7 +102,7 @@ ssh supervison1@10.2.121.15
 
 ### 2.3 Poste de travail
 
-Mon PC Windows est sur un autre réseau et n'a pas de route vers 10.2.121.0/24 (voir [§ 7.2](#72-pc-windows-sans-route-vers-le-réseau-du-labo)). Je travaille donc depuis la **VM ClamAV**, qui a un bureau : son navigateur me sert pour l'interface de Prometheus, et son terminal pour me connecter en SSH à SUPERVISION.
+Mon PC Windows est sur un autre réseau et n'a pas de route vers 10.2.121.0/24 (voir [§ 8.2](#82-pc-windows-sans-route-vers-le-réseau-du-labo)). Je travaille donc depuis la **VM ClamAV**, qui a un bureau : son navigateur me sert pour l'interface de Prometheus, et son terminal pour me connecter en SSH à SUPERVISION.
 
 ![SSH vers SUPERVISION depuis la VM ClamAV](images/05-ssh-depuis-vm-clamav.png)
 
@@ -123,7 +124,7 @@ apt install -y prometheus
 **Résultat :** le paquet `prometheus` (2.42.0) installe aussi **`prometheus-node-exporter`** et ses collecteurs. Ceux-ci ajoutent des timers systemd (`apt`, `smartmon`, `nvme`…) qui déposent des fichiers `.prom` dans `/var/lib/prometheus/node-exporter/`. C'est ce même mécanisme que j'utilise à l'étape 5.
 
 ```bash
-systemctl status prometheus prometheus-node-exporter --no-pager
+systemctl status prometheus prometheus-node-exporter grafana-server --no-pager
 ```
 
 ![Service prometheus actif](images/08-status-prometheus.png)
@@ -182,7 +183,7 @@ Au moment de cette étape, la VM ClamAV avait l'adresse `10.2.121.10` :
 
 ![IP de la VM ClamAV](images/07-ip-vm-clamav.png)
 
-Le test depuis SUPERVISION a d'abord échoué parce que `curl` n'était pas installé (voir [§ 7.3](#73-curl-absent-sur-supervision)) :
+Le test depuis SUPERVISION a d'abord échoué parce que `curl` n'était pas installé (voir [§ 8.3](#83-curl-absent-sur-supervision)) :
 
 ![curl absent](images/16-erreur-curl.png)
 
@@ -245,7 +246,7 @@ L'adresse n'est plus `dynamic`, la route par défaut est maintenant `proto stati
 
 ### 4.4 Ajout de la cible dans Prometheus
 
-J'ai voulu remplacer `10.2.121.10` par `10.2.121.12` avec `sed`, mais `grep` ne trouvait aucune ligne : la cible ClamAV n'avait **jamais été ajoutée** au fichier (voir [§ 7.4](#74-cible-clamav-absente-de-prometheusyml)). Prometheus n'avait donc qu'une cible `node` :
+J'ai voulu remplacer `10.2.121.10` par `10.2.121.12` avec `sed`, mais `grep` ne trouvait aucune ligne : la cible ClamAV n'avait **jamais été ajoutée** au fichier (voir [§ 8.4](#84-cible-clamav-absente-de-prometheusyml)). Prometheus n'avait donc qu'une cible `node` :
 
 ![sed sans effet](images/27-promtool-sans-cible.png)
 ![Seulement 1 cible node](images/28-targets-1-sur-1.png)
@@ -397,7 +398,7 @@ Requêtes de vérification :
 | `clamav_up` | 1 | `clamd` répond |
 | `clamav_db_version` | 28181 | Version de la base `daily` |
 | `(time() - clamav_db_timestamp_seconds) / 3600` | 9,28 | Âge des signatures en heures, futur seuil d'alerte |
-| `clamav_memory_used_bytes / 1024 / 1024` | *no data* | Voir [§ 7.5](#75-clamav_memory_used_bytes-sans-données) |
+| `clamav_memory_used_bytes / 1024 / 1024` | *no data* | Voir [§ 8.5](#85-clamav_memory_used_bytes-sans-données) |
 
 ![clamav_up](images/42-clamav-up.png)
 ![Version de la base](images/43-db-version.png)
@@ -489,7 +490,7 @@ curl -s localhost:9100/metrics | grep -E '^clamav_'
 La première capture montre le fichier écrit par le script, la seconde les mêmes valeurs exposées par node_exporter sur le port 9100 :
 - **Tri des CV :** 0 CV en attente, 1 sain (`ok.txt`), 1 infecté (`eicar.txt`). Le journal compte 2 analyses, dont 1 infectée.
 - **Scan hebdo :** 4 305 fichiers analysés, 0 infecté. `1794484467` est une date au format epoch (secondes depuis 1970), soit le 12/11 à 12:54.
-- **Services :** `clamav-daemon` et `clamonacc` à 1, mais **`clamav-freshclam` à 0** (voir [§ 7.6](#76-clamav-freshclam-arrêté-et-désactivé)).
+- **Services :** `clamav-daemon` et `clamonacc` à 1, mais **`clamav-freshclam` à 0** (voir [§ 8.6](#86-clamav-freshclam-arrêté-et-désactivé)).
 - node_exporter trie les métriques par ordre alphabétique et écrit les grands nombres en notation scientifique (`1.794484467e+09` = 1794484467).
 
 Deux corrections ont suivi ce premier lancement :
@@ -504,7 +505,7 @@ systemctl enable --now clamav-freshclam
 ![freshclam inactive et disabled](images/53-freshclam-disabled.png)
 ![freshclam réactivé](images/54-freshclam-enable.png)
 
-**Taille de la quarantaine corrigée :** `clamav_quarantine_bytes` valait 4096 avec une quarantaine vide (voir [§ 7.7](#77-taille-de-quarantaine-à-4096-octets-pour-un-dossier-vide)).
+**Taille de la quarantaine corrigée :** `clamav_quarantine_bytes` valait 4096 avec une quarantaine vide (voir [§ 8.7](#87-taille-de-quarantaine-à-4096-octets-pour-un-dossier-vide)).
 
 ![quarantine_bytes à 0 et freshclam à 1](images/55-quarantaine-bytes-corrige.png)
 
@@ -642,7 +643,7 @@ J'analyse `/home/thibaut/Téléchargements`, puis je mets les menaces en quarant
 
 L'analyse de 14:24:24 trouve **2 menaces** :
 - `test-supervision.exe` (`Clamav.Test.File-6`), le fichier que je venais de copier ;
-- `eicar.txt` (`Eicar-Test-Signature`), le fichier EICAR de la veille, resté sur place car il n'avait pas été mis en quarantaine (voir [§ 7.8](#78-fichier-eicar-non-bloqué-par-clamonacc)).
+- `eicar.txt` (`Eicar-Test-Signature`), le fichier EICAR de la veille, resté sur place car il n'avait pas été mis en quarantaine (voir [§ 8.8](#88-fichier-eicar-non-bloqué-par-clamonacc)).
 
 Après le passage du cron, Prometheus affiche :
 
@@ -660,46 +661,138 @@ Après le passage du cron, Prometheus affiche :
 
 ---
 
-## 7. Dépannage : erreurs rencontrées
+## 7. Étape 6 : Grafana relié à Prometheus
 
-### 7.1 `Booting from Hard Disk...` bloqué (GRUB absent)
+Grafana affiche les métriques de Prometheus sous forme de tableaux de bord. Je l'installe sur **SUPERVISION**, à côté de Prometheus. Il ne stocke aucune métrique lui-même : il interroge Prometheus à chaque affichage.
+
+### 7.1 Installation depuis le dépôt officiel
+
+Grafana n'est pas dans les dépôts Debian. J'ajoute le dépôt APT de Grafana Labs, signé par leur clé GPG : `apt` vérifie ainsi que les paquets viennent bien d'eux. Sur SUPERVISION, en root :
+
+```bash
+apt update && apt install -y curl gnupg apt-transport-https
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://apt.grafana.com/gpg.key | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg
+echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main" > /etc/apt/sources.list.d/grafana.list
+apt update && apt install -y grafana
+systemctl daemon-reload && systemctl enable --now grafana-server
+```
+
+| Élément | Rôle |
+|---|---|
+| `/etc/apt/keyrings/grafana.gpg` | Clé publique de Grafana Labs, convertie au format binaire par `gpg --dearmor` |
+| `signed-by=…` | Cette clé n'est utilisée **que** pour ce dépôt, et pas pour les dépôts Debian |
+| `/etc/apt/sources.list.d/grafana.list` | Déclaration du dépôt `stable` de Grafana |
+
+Vérifications :
+
+```bash
+systemctl status grafana-server --no-pager
+ss -tlnp | grep 3000
+grafana server -v
+systemctl is-active grafana-server; systemctl is-enabled grafana-server
+```
+
+![Service grafana-server et plugins intégrés](images/80-grafana-status.png)
+![Port 3000 en écoute](images/81-grafana-port-3000.png)
+![Version 13.3.1](images/82-grafana-version.png)
+![Service actif et activé au démarrage](images/83-grafana-active-enabled.png)
+
+**Résultat :**
+- **Grafana 13.3.1** est installé.
+- Le service est `active` et `enabled`, donc il redémarre avec la VM.
+- Il écoute sur **`*:3000`**, donc il est joignable depuis le réseau.
+- Les lignes `plugins-bundled` sont les plugins livrés avec Grafana, dont celui de Prometheus.
+
+### 7.2 Première connexion
+
+Depuis le navigateur de la VM ClamAV, j'ouvre **`http://10.2.121.15:3000`**. Je me connecte avec les identifiants par défaut `admin` / `admin`, et Grafana oblige à changer ce mot de passe dès la première connexion.
+
+> ⚠️ Le nouveau mot de passe est gardé dans un gestionnaire de mots de passe, jamais dans la doc ni dans le dépôt (public). Laisser `admin/admin` permettrait à n'importe qui sur le réseau d'administrer Grafana.
+> Ce compte `admin` local restera le **compte de secours** après l'étape 7 (connexion avec l'Active Directory), au cas où l'AD ne répondrait plus.
+
+![Page d'accueil de Grafana](images/84-grafana-accueil.png)
+
+### 7.3 Ajout de Prometheus comme source de données
+
+Grafana et Prometheus sont sur la même VM : Grafana joint donc Prometheus par `localhost`, sans passer par le réseau.
+
+**Menu ☰ → Connections → Data sources → Add new data source → Prometheus**
+
+![Menu Connections](images/85-grafana-menu-connections.png)
+![Page Connections](images/86-grafana-connections.png)
+
+| Champ | Valeur |
+|---|---|
+| Name | `prometheus` |
+| Default | Activé (source utilisée par défaut dans les nouveaux panneaux) |
+| Prometheus server URL | `http://localhost:9090` |
+| Authentication | No Authentication |
+
+**Save & test** affiche **« Successfully queried the Prometheus API »**. Le bouton **Remove default** confirme que c'est la source par défaut.
+
+![Source de données Prometheus fonctionnelle](images/87-grafana-datasource-ok.png)
+
+### 7.4 Vérification dans Explore
+
+**Explore** permet de lancer des requêtes PromQL sans créer de tableau de bord. J'utilise l'éditeur en mode **Code**.
+
+![Explore](images/88-grafana-explore.png)
+
+| Requête | Résultat |
+|---|---|
+| `up` | 4 séries à 1 : prometheus, node supervision, node clamav, clamav (port 9906) |
+| `clamav_service_active` | clamav-daemon, clamav-freshclam et clamonacc à 1. freshclam est toujours actif depuis sa réactivation du 13/11. |
+| `clamui_infected_files_total` | 3, la valeur atteinte lors du test de bout en bout de l'étape 5 |
+
+![Requête up](images/89-grafana-explore-up.png)
+![Services ClamAV](images/90-grafana-explore-services.png)
+![Menaces trouvées par ClamUI](images/91-grafana-explore-clamui.png)
+
+Grafana affiche donc bien toutes les métriques collectées par Prometheus : celles des exporters et celles de mon script. Les heures sont affichées dans le fuseau du navigateur (heure de Paris), alors que Prometheus affiche l'UTC.
+
+---
+
+## 8. Dépannage : erreurs rencontrées
+
+### 8.1 `Booting from Hard Disk...` bloqué (GRUB absent)
 
 **Symptôme :** après l'installation, la VM reste bloquée sur `Booting from Hard Disk...` (capture 02).
 **Cause :** le chargeur de démarrage GRUB n'avait pas été installé sur le disque.
 **Correction :** démarrage sur l'ISO Debian en mode de secours (*Advanced options → Rescue mode*), puis réinstallation de GRUB sur le disque de la VM.
 
-### 7.2 PC Windows sans route vers le réseau du labo
+### 8.2 PC Windows sans route vers le réseau du labo
 
 **Symptôme :** impossible de joindre 10.2.121.0/24 depuis mon PC.
 **Cause :** le PC est sur un autre réseau, sans route vers le VLAN 800.
 **Contournement :** je travaille depuis la VM ClamAV (navigateur pour Prometheus, terminal pour SSH).
 
-### 7.3 `curl` absent sur SUPERVISION
+### 8.3 `curl` absent sur SUPERVISION
 
 **Symptôme :** `-bash: curl : commande introuvable`, puis `E: L'opération curl n'est pas valable` (capture 16).
 **Cause :** Debian minimal n'installe pas `curl`, et `apt curl` n'est pas une commande valide.
 **Correction :** `apt install -y curl`.
 
-### 7.4 Cible ClamAV absente de `prometheus.yml`
+### 8.4 Cible ClamAV absente de `prometheus.yml`
 
 **Symptôme :** `sed` ne modifie rien et `grep -n "10.2.121"` ne trouve aucune ligne. Targets affiche `node (1/1 up)` et les requêtes sur `machine="clamav"` renvoient *no data* (captures 27 à 29).
 **Cause :** la cible `10.2.121.x:9100` n'avait jamais été ajoutée au fichier.
 **Correction :** réécriture de la section `scrape_configs` avec les deux cibles (capture 30).
 
-### 7.5 `clamav_memory_used_bytes` sans données
+### 8.5 `clamav_memory_used_bytes` sans données
 
 **Symptôme :** *no data* sur `clamav_memory_used_bytes` (capture 45).
 **Cause probable :** `clamd` ne renvoie pas ses statistiques mémoire à l'exporter sur cette version. La mémoire de la VM reste visible avec les métriques `node_memory_*`.
 **Statut :** non bloquant, à approfondir.
 
-### 7.6 `clamav-freshclam` arrêté et désactivé
+### 8.6 `clamav-freshclam` arrêté et désactivé
 
 **Symptôme :** `clamav_service_active{service="clamav-freshclam"} 0`. `systemctl status` affiche `inactive (dead)` et **`disabled`**, et `freshclam.log` n'avait plus bougé depuis le 12/11 (captures 51 et 53).
 **Cause :** le service avait été arrêté et désactivé. C'est souvent le cas quand on lance `freshclam` à la main, car il faut d'abord arrêter le service (erreur « log is locked »). Comme il était `disabled`, il ne serait jamais reparti, même au redémarrage.
 **Correction :** `systemctl enable --now clamav-freshclam` (capture 54).
 **À retenir :** c'est **la supervision qui a révélé ce problème**. Sans elle, la base de signatures aurait vieilli sans que personne ne le voie.
 
-### 7.7 Taille de quarantaine à 4096 octets pour un dossier vide
+### 8.7 Taille de quarantaine à 4096 octets pour un dossier vide
 
 **Symptôme :** `clamav_quarantine_files 0` mais `clamav_quarantine_bytes 4096`.
 **Cause :** `du -sb` compte aussi la taille du dossier lui-même (4 096 octets sur ext4).
@@ -709,7 +802,7 @@ Après le passage du cron, Prometheus affiche :
 find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 ```
 
-### 7.8 Fichier EICAR non bloqué par clamonacc
+### 8.8 Fichier EICAR non bloqué par clamonacc
 
 **Symptôme :** un fichier EICAR est resté dans `/home/thibaut/Téléchargements` depuis le 12/11 sans être bloqué par l'analyse en temps réel.
 **Cause probable :** d'après ma configuration ClamAV, clamonacc surveille `/home/flo/Téléchargements` et `/var/www/data/cv_incoming`, mais pas les Téléchargements de `thibaut`.
@@ -717,12 +810,13 @@ find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 
 ---
 
-## 8. Récapitulatif
+## 9. Récapitulatif
 
 ### Ports
 
 | Port | Service | Machine | Accès |
 |---|---|---|---|
+| 3000 | Grafana | SUPERVISION | Interface web, `http://10.2.121.15:3000` |
 | 9090 | Prometheus | SUPERVISION | Interface web, `http://10.2.121.15:9090` |
 | 9100 | node_exporter | SUPERVISION et ClamAV | Interrogé par Prometheus |
 | 9906 | clamav_exporter | ClamAV | Interrogé par Prometheus |
@@ -733,6 +827,8 @@ find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 | Fichier | Machine | Rôle |
 |---|---|---|
 | `/etc/prometheus/prometheus.yml` | SUPERVISION | Cibles de Prometheus |
+| `/etc/apt/sources.list.d/grafana.list` | SUPERVISION | Dépôt APT de Grafana (clé : `/etc/apt/keyrings/grafana.gpg`) |
+| `/etc/grafana/grafana.ini` | SUPERVISION | Configuration de Grafana (utilisée à l'étape 7) |
 | `/etc/clamav/clamd.conf` | ClamAV | `TCPSocket 3310`, `TCPAddr 127.0.0.1` |
 | `/etc/systemd/system/clamav-daemon.socket.d/tcp.conf` | ClamAV | Port TCP du socket systemd de clamd |
 | `/usr/local/bin/clamav_exporter` | ClamAV | Binaire de l'exporter (v2.1.13) |
@@ -745,7 +841,7 @@ find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 ```bash
 # --- SUPERVISION ---
 promtool check config /etc/prometheus/prometheus.yml && systemctl restart prometheus
-systemctl status prometheus prometheus-node-exporter --no-pager
+systemctl status prometheus prometheus-node-exporter grafana-server --no-pager
 
 # --- VM ClamAV ---
 systemctl status prometheus-node-exporter clamav-exporter clamav-freshclam --no-pager
