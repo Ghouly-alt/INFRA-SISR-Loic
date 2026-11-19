@@ -1,0 +1,227 @@
+# /etc/grafana/provisioning/alerting/alertes-clamav.yaml
+# Règles d'alerte Grafana pour la supervision ClamAV (AP 1 GSBLOLO).
+# Remplacer PROM_UID par l'UID de la source de données Prometheus avant de redémarrer Grafana.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: ClamAV
+    folder: Supervision ClamAV
+    interval: 1m
+    rules:
+      - uid: cible-injoignable
+        title: "Cible Prometheus injoignable"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "up"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+        noDataState: Alerting
+        execErrState: Error
+        for: 2m
+        labels:
+          severite: critique
+        annotations:
+          summary: "{{ $labels.job }} {{ $labels.machine }} ne répond plus"
+          description: "Prometheus n'arrive plus à interroger {{ $labels.instance }} (job {{ $labels.job }}) depuis 2 minutes : VM éteinte, service arrêté ou problème réseau."
+        isPaused: false
+      - uid: service-clamav-arrete
+        title: "Service ClamAV arrêté"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "clamav_service_active"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels:
+          severite: critique
+        annotations:
+          summary: "Le service {{ $labels.service }} est arrêté"
+          description: "systemctl is-active {{ $labels.service }} ne renvoie plus active depuis 5 minutes sur la VM ClamAV."
+        isPaused: false
+      - uid: clamd-injoignable
+        title: "clamd injoignable"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "clamav_up"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        labels:
+          severite: critique
+        annotations:
+          summary: "clamav_exporter n'arrive plus à joindre clamd"
+          description: "Le démon clamd ne répond plus sur 127.0.0.1:3310 depuis 5 minutes : les analyses de ClamUI et de clamonacc ne fonctionnent plus."
+        isPaused: false
+      - uid: signatures-perimees
+        title: "Signatures ClamAV trop anciennes"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "(time() - clamav_db_timestamp_seconds) / 3600"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [48]
+        noDataState: OK
+        execErrState: Error
+        for: 30m
+        labels:
+          severite: avertissement
+        annotations:
+          summary: "Base de signatures vieille de {{ humanize $values.A.Value }} h"
+          description: "La base de signatures n'a pas été mise à jour depuis plus de 48 h : vérifier le service clamav-freshclam et l'accès à Internet."
+        isPaused: false
+      - uid: script-metriques-arrete
+        title: "Script de métriques arrêté"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "time() - clamav_metrics_last_run_timestamp_seconds"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [900]
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        labels:
+          severite: avertissement
+        annotations:
+          summary: "clamav_metrics.sh n'a pas tourné depuis plus de 15 minutes"
+          description: "Le cron devrait lancer /usr/local/bin/clamav_metrics.sh toutes les 5 minutes. Les métriques de quarantaine, de tri des CV et de ClamUI ne sont plus à jour."
+        isPaused: false
+      - uid: nouvelle-menace
+        title: "Nouvelle menace détectée"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "sum by (machine) (increase(clamui_infected_files_total[15m])) + sum by (machine) (increase(clamav_cv_infected_total[15m])) + sum by (machine) (increase(clamav_onaccess_detections_total[15m]))"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0.5]
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          severite: critique
+        annotations:
+          summary: "Nouvelle menace détectée sur {{ $labels.machine }}"
+          description: "ClamUI, le tri des CV ou l'analyse en temps réel a détecté au moins une menace ces 15 dernières minutes. Voir le tableau de bord ClamAV et la quarantaine."
+        isPaused: false
+      - uid: menace-scan-hebdo
+        title: "Menace trouvée par le scan hebdomadaire"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "clamav_home_scan_infected_files and (time() - clamav_home_scan_last_timestamp_seconds) < 86400"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          severite: critique
+        annotations:
+          summary: "Le scan hebdomadaire de /home a trouvé {{ $values.A.Value }} fichier(s) infecté(s)"
+          description: "Le dernier scan de /home (moins de 24 h) a déplacé des fichiers dans /var/quarantaine. Voir /var/log/clamav/scan-home-hebdo.log."
+        isPaused: false
