@@ -33,7 +33,7 @@
     "to": "now"
   },
   "schemaVersion": 39,
-  "version": 2,
+  "version": 3,
   "description": "Supervision de ClamAV et ClamUI sur la VM 812 (AP 1 GSBLOLO)",
   "annotations": {
     "list": []
@@ -80,8 +80,8 @@
           "expr": "up",
           "legendFormat": "{{job}} {{machine}}",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -160,8 +160,8 @@
           "expr": "clamav_service_active",
           "legendFormat": "{{service}}",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -240,8 +240,8 @@
           "expr": "clamav_up",
           "legendFormat": "clamd",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -320,8 +320,8 @@
           "expr": "clamav_db_version",
           "legendFormat": "version daily",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -384,8 +384,8 @@
           "expr": "(time() - clamav_db_timestamp_seconds) / 3600",
           "legendFormat": "âge",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -457,8 +457,8 @@
           "expr": "time() - clamav_metrics_last_run_timestamp_seconds",
           "legendFormat": "âge",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -530,8 +530,8 @@
           "expr": "clamav_quarantine_files",
           "legendFormat": "/var/quarantaine",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         },
         {
           "datasource": {
@@ -541,8 +541,8 @@
           "expr": "clamui_quarantine_files{state=\"active\"}",
           "legendFormat": "ClamUI",
           "refId": "B",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -826,8 +826,8 @@
           "expr": "clamav_home_scan_infected_files",
           "legendFormat": "/home",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -987,8 +987,8 @@
           "expr": "clamui_last_scan_timestamp_seconds * 1000",
           "legendFormat": "ClamUI",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -1051,8 +1051,8 @@
           "expr": "clamav_home_scan_last_timestamp_seconds * 1000",
           "legendFormat": "/home",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -1115,8 +1115,8 @@
           "expr": "clamav_home_scan_scanned_files",
           "legendFormat": "/home",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -1179,8 +1179,8 @@
           "expr": "clamui_scans_total",
           "legendFormat": "{{status}}",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -1243,8 +1243,8 @@
           "expr": "clamav_cv_files",
           "legendFormat": "{{dossier}}",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
