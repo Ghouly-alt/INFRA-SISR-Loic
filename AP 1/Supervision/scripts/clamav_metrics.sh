@@ -12,7 +12,7 @@ LOGDIR="/var/log/clamav"
 # Compte les lignes d'un fichier qui correspondent à un motif (0 si absent)
 compte() { local n; n=$(grep -cE "$1" "$2" 2>/dev/null); echo "${n:-0}"; }
 # Compte les fichiers d'un dossier (sans sous-dossiers)
-nb_fichiers() { find "$1" -maxdepth 1 -type f 2>/dev/null | wc -l; }
+nb_fichiers() { find "$1" -maxdepth 1 -type f ! -name '.*' 2>/dev/null | wc -l; }
 
 {
 echo "# HELP clamav_quarantine_files Nombre de fichiers en quarantaine."
@@ -21,7 +21,7 @@ echo "clamav_quarantine_files $(nb_fichiers "$QUAR")"
 
 echo "# HELP clamav_quarantine_bytes Taille totale de la quarantaine en octets."
 echo "# TYPE clamav_quarantine_bytes gauge"
-echo "clamav_quarantine_bytes $(find "$QUAR" -maxdepth 1 -type f -printf '%s\n' 2>/dev/null | awk '{s+=$1} END {print s+0}')"
+echo "clamav_quarantine_bytes $(find "$QUAR" -maxdepth 1 -type f ! -name '.*' -printf '%s\n' 2>/dev/null | awk '{s+=$1} END {print s+0}')"
 
 echo "# HELP clamav_cv_files Nombre de CV dans chaque dossier de tri."
 echo "# TYPE clamav_cv_files gauge"
