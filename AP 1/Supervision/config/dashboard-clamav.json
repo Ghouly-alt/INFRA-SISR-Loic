@@ -33,7 +33,7 @@
     "to": "now"
   },
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "description": "Supervision de ClamAV et ClamUI sur la VM 812 (AP 1 GSBLOLO)",
   "annotations": {
     "list": []
@@ -601,8 +601,8 @@
     {
       "id": 10,
       "type": "stat",
-      "title": "Menaces trouvées par ClamUI",
-      "description": "Cumul des menaces trouvées par les analyses ClamUI.",
+      "title": "Nouvelles menaces ClamUI",
+      "description": "Menaces trouvées par ClamUI sur la période affichée (le cumul est dans la courbe).",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -619,11 +619,11 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "clamui_infected_files_total",
+          "expr": "round(increase(clamui_infected_files_total[$__range]))",
           "legendFormat": "ClamUI",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -669,8 +669,8 @@
     {
       "id": 11,
       "type": "stat",
-      "title": "CV infectés",
-      "description": "Cumul des CV détectés infectés par scan_cvs.sh.",
+      "title": "Nouveaux CV infectés",
+      "description": "CV détectés infectés par scan_cvs.sh sur la période affichée.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -687,11 +687,11 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "clamav_cv_infected_total",
+          "expr": "round(increase(clamav_cv_infected_total[$__range]))",
           "legendFormat": "CV",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
@@ -737,8 +737,8 @@
     {
       "id": 12,
       "type": "stat",
-      "title": "Détections en temps réel",
-      "description": "Cumul des détections de clamonacc.",
+      "title": "Nouvelles détections temps réel",
+      "description": "Détections de clamonacc sur la période affichée.",
       "datasource": {
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
@@ -755,11 +755,11 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "expr": "clamav_onaccess_detections_total",
+          "expr": "round(increase(clamav_onaccess_detections_total[$__range]))",
           "legendFormat": "clamonacc",
           "refId": "A",
-          "range": true,
-          "instant": false
+          "range": false,
+          "instant": true
         }
       ],
       "fieldConfig": {
