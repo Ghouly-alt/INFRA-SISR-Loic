@@ -4,8 +4,8 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 
 > **Prérequis :** ClamAV et ClamUI sont déjà installés et fonctionnels sur la VM 812 (voir les documentations [ClamAV](../../Structure%20du%20r%C3%A9seau/Docs/ClamAV/ClamAV.md) et [ClamUI](../../Structure%20du%20r%C3%A9seau/Docs/ClamUI/ClamUI.md)).
 >
-> **Dates de réalisation :** 12/11/2026 (étapes 1 à 4), 13/11/2026 (étape 5) et 19/11/2026 (étapes 6 et 7)
-> **État :** étapes 1 à 7 terminées. Le tableau de bord et les alertes viendront ensuite (voir [l'avancement](README.md)).
+> **Dates de réalisation :** 12/11/2026 (étapes 1 à 4), 13/11/2026 (étape 5) et 19/11/2026 (étapes 6, 7 et 8)
+> **État :** étapes 1 à 8 terminées (supervision, tableaux de bord et alertes en service). Amélioration prévue ensuite : superviser les contrôleurs de domaine (windows_exporter) (voir [l'avancement](README.md)).
 
 ---
 
@@ -19,8 +19,9 @@ Je présente ici la mise en place de la supervision de mon infrastructure avec *
 6. [Étape 5 : script de métriques ClamAV et ClamUI](#6-étape-5--script-de-métriques-clamav-et-clamui)
 7. [Étape 6 : Grafana relié à Prometheus](#7-étape-6--grafana-relié-à-prometheus)
 8. [Étape 7 : connexion à Grafana avec l'Active Directory](#8-étape-7--connexion-à-grafana-avec-lactive-directory)
-9. [Dépannage : erreurs rencontrées](#9-dépannage--erreurs-rencontrées)
-10. [Récapitulatif](#10-récapitulatif)
+9. [Étape 8 : tableau de bord et alertes](#9-étape-8--tableau-de-bord-et-alertes)
+10. [Dépannage : erreurs rencontrées](#10-dépannage--erreurs-rencontrées)
+11. [Récapitulatif](#11-récapitulatif)
 
 ---
 
@@ -76,7 +77,7 @@ Pendant l'installation, l'installeur lance automatiquement une configuration **D
 | DNS | Mon contrôleur de domaine (`10.2.121.2`) |
 | Utilisateur | `supervison1` |
 
-Au premier redémarrage, la VM est restée bloquée sur `Booting from Hard Disk...` : GRUB n'avait pas été installé sur le disque (voir [§ 9.1](#91-booting-from-hard-disk-bloqué-grub-absent)).
+Au premier redémarrage, la VM est restée bloquée sur `Booting from Hard Disk...` : GRUB n'avait pas été installé sur le disque (voir [§ 10.1](#101-booting-from-hard-disk-bloqué-grub-absent)).
 
 ![Démarrage bloqué : GRUB absent](images/02-erreur-grub.png)
 
@@ -103,7 +104,7 @@ ssh supervison1@10.2.121.15
 
 ### 2.3 Poste de travail
 
-Mon PC Windows est sur un autre réseau et n'a pas de route vers 10.2.121.0/24 (voir [§ 9.2](#92-pc-windows-sans-route-vers-le-réseau-du-labo)). Je travaille donc depuis la **VM ClamAV**, qui a un bureau : son navigateur me sert pour l'interface de Prometheus, et son terminal pour me connecter en SSH à SUPERVISION.
+Mon PC Windows est sur un autre réseau et n'a pas de route vers 10.2.121.0/24 (voir [§ 10.2](#102-pc-windows-sans-route-vers-le-réseau-du-labo)). Je travaille donc depuis la **VM ClamAV**, qui a un bureau : son navigateur me sert pour l'interface de Prometheus, et son terminal pour me connecter en SSH à SUPERVISION.
 
 ![SSH vers SUPERVISION depuis la VM ClamAV](images/05-ssh-depuis-vm-clamav.png)
 
@@ -184,7 +185,7 @@ Au moment de cette étape, la VM ClamAV avait l'adresse `10.2.121.10` :
 
 ![IP de la VM ClamAV](images/07-ip-vm-clamav.png)
 
-Le test depuis SUPERVISION a d'abord échoué parce que `curl` n'était pas installé (voir [§ 9.3](#93-curl-absent-sur-supervision)) :
+Le test depuis SUPERVISION a d'abord échoué parce que `curl` n'était pas installé (voir [§ 10.3](#103-curl-absent-sur-supervision)) :
 
 ![curl absent](images/16-erreur-curl.png)
 
@@ -247,7 +248,7 @@ L'adresse n'est plus `dynamic`, la route par défaut est maintenant `proto stati
 
 ### 4.4 Ajout de la cible dans Prometheus
 
-J'ai voulu remplacer `10.2.121.10` par `10.2.121.12` avec `sed`, mais `grep` ne trouvait aucune ligne : la cible ClamAV n'avait **jamais été ajoutée** au fichier (voir [§ 9.4](#94-cible-clamav-absente-de-prometheusyml)). Prometheus n'avait donc qu'une cible `node` :
+J'ai voulu remplacer `10.2.121.10` par `10.2.121.12` avec `sed`, mais `grep` ne trouvait aucune ligne : la cible ClamAV n'avait **jamais été ajoutée** au fichier (voir [§ 10.4](#104-cible-clamav-absente-de-prometheusyml)). Prometheus n'avait donc qu'une cible `node` :
 
 ![sed sans effet](images/27-promtool-sans-cible.png)
 ![Seulement 1 cible node](images/28-targets-1-sur-1.png)
@@ -399,7 +400,7 @@ Requêtes de vérification :
 | `clamav_up` | 1 | `clamd` répond |
 | `clamav_db_version` | 28181 | Version de la base `daily` |
 | `(time() - clamav_db_timestamp_seconds) / 3600` | 9,28 | Âge des signatures en heures, futur seuil d'alerte |
-| `clamav_memory_used_bytes / 1024 / 1024` | *no data* | Voir [§ 9.5](#95-clamav_memory_used_bytes-sans-données) |
+| `clamav_memory_used_bytes / 1024 / 1024` | *no data* | Voir [§ 10.5](#105-clamav_memory_used_bytes-sans-données) |
 
 ![clamav_up](images/42-clamav-up.png)
 ![Version de la base](images/43-db-version.png)
@@ -491,7 +492,7 @@ curl -s localhost:9100/metrics | grep -E '^clamav_'
 La première capture montre le fichier écrit par le script, la seconde les mêmes valeurs exposées par node_exporter sur le port 9100 :
 - **Tri des CV :** 0 CV en attente, 1 sain (`ok.txt`), 1 infecté (`eicar.txt`). Le journal compte 2 analyses, dont 1 infectée.
 - **Scan hebdo :** 4 305 fichiers analysés, 0 infecté. `1794484467` est une date au format epoch (secondes depuis 1970), soit le 12/11 à 12:54.
-- **Services :** `clamav-daemon` et `clamonacc` à 1, mais **`clamav-freshclam` à 0** (voir [§ 9.6](#96-clamav-freshclam-arrêté-et-désactivé)).
+- **Services :** `clamav-daemon` et `clamonacc` à 1, mais **`clamav-freshclam` à 0** (voir [§ 10.6](#106-clamav-freshclam-arrêté-et-désactivé)).
 - node_exporter trie les métriques par ordre alphabétique et écrit les grands nombres en notation scientifique (`1.794484467e+09` = 1794484467).
 
 Deux corrections ont suivi ce premier lancement :
@@ -506,7 +507,7 @@ systemctl enable --now clamav-freshclam
 ![freshclam inactive et disabled](images/53-freshclam-disabled.png)
 ![freshclam réactivé](images/54-freshclam-enable.png)
 
-**Taille de la quarantaine corrigée :** `clamav_quarantine_bytes` valait 4096 avec une quarantaine vide (voir [§ 9.7](#97-taille-de-quarantaine-à-4096-octets-pour-un-dossier-vide)).
+**Taille de la quarantaine corrigée :** `clamav_quarantine_bytes` valait 4096 avec une quarantaine vide (voir [§ 10.7](#107-taille-de-quarantaine-à-4096-octets-pour-un-dossier-vide)).
 
 ![quarantine_bytes à 0 et freshclam à 1](images/55-quarantaine-bytes-corrige.png)
 
@@ -644,7 +645,7 @@ J'analyse `/home/thibaut/Téléchargements`, puis je mets les menaces en quarant
 
 L'analyse de 14:24:24 trouve **2 menaces** :
 - `test-supervision.exe` (`Clamav.Test.File-6`), le fichier que je venais de copier ;
-- `eicar.txt` (`Eicar-Test-Signature`), le fichier EICAR de la veille, resté sur place car il n'avait pas été mis en quarantaine (voir [§ 9.8](#98-fichier-eicar-non-bloqué-par-clamonacc)).
+- `eicar.txt` (`Eicar-Test-Signature`), le fichier EICAR de la veille, resté sur place car il n'avait pas été mis en quarantaine (voir [§ 10.8](#108-fichier-eicar-non-bloqué-par-clamonacc)).
 
 Après le passage du cron, Prometheus affiche :
 
@@ -857,7 +858,7 @@ allow_sign_up = true
 ![Lignes encore en commentaire](images/100-grafana-ini-points-virgules.png)
 ![Section [auth.ldap] corrigée](images/105-grafana-ini-corrige.png)
 
-Ma première modification n'avait pas enlevé les `;` en début de ligne, donc LDAP restait désactivé (voir [§ 9.9](#99-ldap-non-activé--lignes-restées-en-commentaire)).
+Ma première modification n'avait pas enlevé les `;` en début de ligne, donc LDAP restait désactivé (voir [§ 10.9](#109-ldap-non-activé--lignes-restées-en-commentaire)).
 
 **Paramètres de connexion** dans `/etc/grafana/ldap.toml`. Le modèle, sans le mot de passe, est dans [`config/ldap.toml`](config/ldap.toml) :
 
@@ -920,46 +921,304 @@ L'écran affiche le même message dans les deux cas : un attaquant ne peut pas s
 
 ---
 
-## 9. Dépannage : erreurs rencontrées
+## 9. Étape 8 : tableau de bord et alertes
 
-### 9.1 `Booting from Hard Disk...` bloqué (GRUB absent)
+### 9.1 Le tableau de bord ClamAV
+
+Je n'ai pas créé les panneaux un par un dans l'interface : le tableau de bord est décrit en **JSON**, le format d'export de Grafana, et je l'importe. Le fichier [`config/dashboard-clamav.json`](config/dashboard-clamav.json) est dans le dépôt : on peut donc recréer le tableau de bord à l'identique.
+
+| Ligne | Panneaux |
+|---|---|
+| **État** | Cibles Prometheus (UP/DOWN), services ClamAV (Actif/Arrêté), clamd joignable, version de la base, âge des signatures (vert < 24 h < orange < 48 h < rouge), dernier passage du script, fichiers en quarantaine (`/var/quarantaine` et ClamUI) |
+| **Menaces détectées** | Nouvelles menaces ClamUI, nouveaux CV infectés, nouvelles détections en temps réel (sur la période affichée), menaces du dernier scan hebdomadaire, courbe des cumuls |
+| **Analyses et tri des CV** | Dernière analyse ClamUI, dernier scan hebdomadaire, fichiers analysés, analyses ClamUI par résultat, dossiers de tri des CV |
+| **Système de la VM ClamAV** | CPU, mémoire disponible, disque `/` (seuil à 85 %) |
+
+**Import :** dans le navigateur de la VM ClamAV, j'ouvre le fichier brut sur GitHub et je copie son contenu. Dans Grafana : **Dashboards → New → Import**, je colle le JSON, je choisis la source **prometheus**, puis **Import**.
+
+![Menu Dashboards](images/114-dashboards-menu.png)
+![Bouton New](images/115-dashboards-new.png)
+![Import et choix de la source Prometheus](images/116-dashboard-import.png)
+![Première version du tableau de bord](images/117-dashboard-v1.png)
+
+J'ai corrigé deux défauts de conception en cours de route, en réimportant le fichier avec **Import (Overwrite)** :
+
+1. **Cumuls toujours rouges :** les cases de menaces affichaient des totaux depuis le début (ClamUI 3, CV 1). Avec un seuil rouge dès 1, elles seraient restées rouges pour toujours. Elles comptent maintenant les **nouvelles** menaces de la période affichée, avec `round(increase(…[$__range]))`. Les cumuls restent visibles dans la courbe.
+2. **Valeurs en retard :** les cases d'état utilisaient des requêtes sur une période (*range*). Sur 24 h, Grafana ne prend qu'un point toutes les quelques minutes, et la « dernière valeur » pouvait dater d'avant un changement. clamonacc était réparé, mais il restait affiché « Arrêté » (capture 165). Les 14 requêtes des cases sont passées en **requêtes instantanées** : elles affichent la valeur du moment.
+
+![Version 2 : menaces sur la période](images/118-dashboard-v2.png)
+![Requêtes range : clamonacc encore affiché Arrêté](images/165-dashboard-retard-range.png)
+![Version 3 : valeurs instantanées, tout est vert](images/166-dashboard-v3.png)
+
+### 9.2 Ce que le tableau de bord a révélé : deux quarantaines
+
+Dès le premier affichage, la case **« Menaces au dernier scan hebdo »** est passée au rouge avec la valeur **2**, alors que `/var/quarantaine` était vide.
+
+```bash
+grep -E "FOUND|moved|ERROR|Infected files|Start Date" /var/log/clamav/scan-home-hebdo.log | tail -15
+```
+
+![Journal du scan hebdomadaire](images/119-scan-hebdo-journal.png)
+![Quarantaine ClamUI et /var/quarantaine vides](images/120-deux-quarantaines.png)
+
+Le scan du **dimanche 15/11 à 02:00** a trouvé les 2 fichiers que **ClamUI avait mis dans sa propre quarantaine**. Cette quarantaine est rangée dans `/home/thibaut/.var/app/…`, donc à l'intérieur de `/home`, que le scan hebdomadaire analyse. Il les a déplacés… mais pas dans `/var/quarantaine`, dont la date de modification n'avait pas changé depuis le 12/11.
+
+```bash
+stat -c '%y  %n' /var/quarantaine && findmnt -T /var/quarantaine
+systemctl cat scan-home-hebdo.service
+find / -path /proc -prune -o \( -name '*eicar*' -o -name '*test-supervision*' \) -print 2>/dev/null
+journalctl -u scan-home-hebdo --since "2026-11-15 01:55" --until "2026-11-15 03:00" --no-pager
+```
+
+![Date de modification de /var/quarantaine](images/121-quarantaine-stat.png)
+![Le service utilise /var/quarantine](images/122-scan-hebdo-service.png)
+![Les fichiers sont dans /var/quarantine](images/123-find-fichiers.png)
+![Exécution du 15/11 (1)](images/124-scan-hebdo-journalctl-1.png)
+![Exécution du 15/11 (2)](images/125-scan-hebdo-journalctl-2.png)
+
+**Cause :** sur la VM, le service contenait **`--move=/var/quarantine`**, en orthographe anglaise. Il y avait donc deux dossiers : `/var/quarantaine`, surveillé, et `/var/quarantine`, invisible pour la supervision, avec 3 fichiers infectés.
+
+**Corrections :**
+
+```bash
+# Bon dossier + exclusion de la quarantaine de ClamUI
+sed -i 's#--move=/var/quarantine #--move=/var/quarantaine --exclude-dir=^/home/[^/]+/.var/app/io.github.linx_systems.ClamUI/data/clamui/quarantine #' /etc/systemd/system/scan-home-hebdo.service
+systemctl daemon-reload
+# Regroupement des fichiers ; un verrou caché (.clamav-quarantine-lock.*) empêchait rmdir
+mv /var/quarantine/* /var/quarantaine/
+rm /var/quarantine/.clamav-quarantine-lock.5037.0 && rmdir /var/quarantine
+# Vérification immédiate
+systemctl start scan-home-hebdo.service
+```
+
+![Correction du service et regroupement](images/126-correction-scan-hebdo.png)
+![Suppression du verrou et du mauvais dossier](images/127-suppression-verrou.png)
+![Scan de vérification : Infected files 0](images/130-scan-verification.png)
+
+Mon script comptait aussi les fichiers cachés : pendant un scan, le verrou de `clamscan` aurait été compté comme un fichier en quarantaine. Il ignore maintenant les noms qui commencent par un point (`! -name '.*'`).
+
+![Script corrigé et scan terminé](images/128-script-fichiers-caches.png)
+![3 fichiers en quarantaine, 680 octets](images/129-quarantaine-3-fichiers.png)
+
+**Remise en ordre de ClamUI :** sa base indiquait toujours 2 fichiers en quarantaine, alors qu'ils n'y étaient plus. Le bouton **Supprimer** échouait avec `Aucun fichier ou dossier de ce nom (os error 2)`. Avec ClamUI fermé, et en tant que `thibaut`, propriétaire de la base, j'ai fait une sauvegarde de `quarantine.db`. J'ai d'abord passé les deux entrées à l'état `deleted`, mais ClamUI les affichait toujours. Je les ai donc supprimées.
+
+```bash
+cd ~/.var/app/io.github.linx_systems.ClamUI/data/clamui && cp quarantine.db quarantine.db.bak
+python3 -c "import sqlite3; c=sqlite3.connect('quarantine.db'); c.execute(\"DELETE FROM quarantine WHERE state='deleted'\"); c.commit()"
+```
+
+![ClamUI : os error 2](images/135-clamui-erreur-suppression.png)
+![Entrées passées à deleted](images/136-clamui-base-deleted.png)
+![Vérification et redémarrage de ClamUI](images/137-clamui-redemarrage.png)
+![ClamUI affiche aussi les entrées deleted](images/138-clamui-encore-2-elements.png)
+![Suppression des 2 lignes](images/139-clamui-suppression-lignes.png)
+
+> ⚠️ Le script doit tourner en tant que `thibaut`, ClamUI fermé (`flatpak ps` vide). Si root écrivait dans la base, SQLite pourrait créer des fichiers temporaires appartenant à root, et ClamUI ne pourrait plus écrire. Si ClamUI tournait encore, il pourrait réécrire ses propres données en se fermant.
+
+**Limite de l'analyse complète de ClamUI :** une analyse de `/` lancée depuis ClamUI a annoncé « Sain, 0 menace ». En réalité, elle **n'avait pas pu lire 78 161 fichiers**. En mode `daemon`, c'est `clamd`, avec le compte `clamav`, qui lit les fichiers, et il n'a pas accès à une grande partie du système. Le CV infecté de `/var/www/data/cv_infected` n'a pas été signalé, alors que `clamdscan --fdpass` le détecte bien. **« Sain » ne veut pas dire « tout a été analysé ».** L'analyse complète du système est le rôle du scan hebdomadaire, qui tourne en root.
+
+![Analyse complète en cours](images/131-clamui-analyse-complete.png)
+![Analyse terminée : Sain](images/132-clamui-analyse-terminee.png)
+![78 161 fichiers inaccessibles](images/134-clamui-fichiers-inaccessibles.png)
+![clamdscan détecte le CV infecté](images/133-clamdscan-cv-infecte.png)
+
+### 9.3 Les alertes
+
+Les alertes sont visibles **dans Grafana**, sans envoi par e-mail, faute de serveur de messagerie. Elles sont décrites dans un fichier de **provisioning** que Grafana charge au démarrage : [`config/alertes-clamav.yaml`](config/alertes-clamav.yaml). C'est plus fiable que 7 règles saisies à la main, et le fichier est versionné dans le dépôt.
+
+| Règle | Se déclenche si… | Délai | Gravité |
+|---|---|---|---|
+| Cible Prometheus injoignable | `up` = 0 | 2 min | critical |
+| Service ClamAV arrêté | `clamav_service_active` = 0 | 5 min | critical |
+| clamd injoignable | `clamav_up` = 0 | 5 min | critical |
+| Signatures ClamAV trop anciennes | Âge de la base > 48 h | 30 min | warning |
+| Script de métriques arrêté | Dernier passage > 15 min | 5 min | warning |
+| Nouvelle menace détectée | Une détection ClamUI, CV ou temps réel dans les 15 dernières min | immédiat | critical |
+| Menace au scan hebdomadaire | Le scan de moins de 24 h a trouvé des fichiers infectés | immédiat | critical |
+
+Le **délai** (*pending period*) évite les fausses alertes : un service redémarré en quelques secondes ne déclenche rien. Les règles sont évaluées **toutes les minutes**.
+
+Installation sur SUPERVISION :
+
+```bash
+curl -fsSL -o /etc/grafana/provisioning/alerting/alertes-clamav.yaml "https://raw.githubusercontent.com/Ghouly-alt/INFRA-SISR-Loic/main/AP%201/Supervision/config/alertes-clamav.yaml"
+# UID de la source de données, récupéré automatiquement (sans le recopier à la main)
+UID_PROM=$(curl -s -u admin http://localhost:3000/api/datasources/name/prometheus | grep -o '"uid":"[^"]*"' | cut -d'"' -f4)
+sed -i -E "/datasourceUid: __expr__/! s/(datasourceUid: ).*/\1$UID_PROM/" /etc/grafana/provisioning/alerting/alertes-clamav.yaml
+chown root:grafana /etc/grafana/provisioning/alerting/alertes-clamav.yaml && chmod 640 /etc/grafana/provisioning/alerting/alertes-clamav.yaml
+systemctl restart grafana-server
+```
+
+![Téléchargement et UID de la source](images/140-alertes-telechargement-uid.png)
+![Premier remplacement de l'UID](images/141-alertes-sed-ton-uid.png)
+![Vérification et droits](images/142-alertes-droits.png)
+![Redémarrage sans erreur](images/143-alertes-redemarrage.png)
+![Dossier Supervision ClamAV](images/144-alertes-dossier.png)
+
+Au premier chargement, les 7 règles étaient en erreur **« data source not found »** : le fichier contenait littéralement `TON_UID` (voir [§ 10.14](#1014-alertes--data-source-not-found-)). Avec l'UID récupéré automatiquement, elles sont passées en **Normal**.
+
+![Erreur data source not found](images/145-alertes-data-source-not-found.png)
+![UID récupéré automatiquement : 7 + 7](images/146-alertes-uid-auto.png)
+![Redémarrage](images/147-alertes-redemarrage-2.png)
+![Les 7 règles en Normal](images/148-alertes-7-normal.png)
+
+> 💡 Dans la liste, les résumés s'affichent avec leurs modèles (`{{ $labels.service }}`). Grafana ne les remplit qu'au moment où une alerte se déclenche.
+
+### 9.4 Test : la panne de clamonacc
+
+Pour tester l'alerte « Service ClamAV arrêté », j'ai arrêté `clamonacc`. L'historique de la règle a montré quelque chose d'inattendu : l'alerte était passée en **Pending dès 14:40:37**, donc **avant** mon arrêt volontaire de 14:41:32.
+
+![Premier arrêt et relance de clamonacc (14:36)](images/149-test-clamonacc-1.png)
+![Arrêt de 14:41](images/150-test-clamonacc-arret.png)
+![Règle en Pending](images/151-alerte-pending.png)
+![Règle en Firing](images/152-alerte-firing.png)
+![Relance à 14:47:53](images/153-test-clamonacc-relance.png)
+![Accueil : alerte en cours, gravité Unknown](images/154-accueil-firing-unknown.png)
+
+Après la relance, l'alerte restait en **Firing** : le service était en réalité **`failed`**, une seconde après son démarrage.
+
+```bash
+systemctl status clamonacc --no-pager
+tail -15 /var/log/clamav/clamonacc.log
+```
+
+![clamonacc failed et métrique à 0](images/156-clamonacc-failed.png)
+![Explore : clamonacc à 0](images/157-explore-clamonacc-0.png)
+![Journal : Failed to get realpath of /var/quarantine](images/159-clamonacc-journal.png)
+
+**Cause :** le service clamonacc de la VM contenait lui aussi **`--move=/var/quarantine`**. Tant que ce dossier existait, clamonacc démarrait. Quand je l'ai supprimé vers 14:00, clamonacc a continué de tourner, car il n'a besoin de ce dossier qu'au démarrage. Dès le premier redémarrage, à 14:36, il a échoué en boucle avec `Failed to get realpath of /var/quarantine` et `can't setup client`. **L'analyse en temps réel a été coupée de 14:36 à 15:53**, et c'est l'alerte qui l'a révélé.
+
+```bash
+grep -rn "/var/quarantine" /etc/systemd/system /etc/clamav /usr/local/bin /etc/crontab /var/spool/cron
+sed -i 's#/var/quarantine#/var/quarantaine#g' /etc/systemd/system/clamonacc.service
+systemctl daemon-reload && systemctl restart clamonacc && sleep 10 && systemctl is-active clamonacc
+```
+
+![Correction de clamonacc](images/158-clamonacc-correction.png)
+![Détail de la règle](images/160-alerte-detail.png)
+![Tableau de bord : clamonacc Arrêté](images/162-dashboard-clamonacc-arrete.png)
+![Règle revenue en Normal](images/163-alerte-normal.png)
+![Historique pendant la panne](images/161-alerte-historique-1.png)
+![Historique complet](images/164-alerte-historique-2.png)
+
+| Heure | Événement | État de la règle |
+|---|---|---|
+| ~14:00 | Suppression de `/var/quarantine` (clamonacc tourne encore) | Normal |
+| 14:36 | Arrêt puis redémarrage : clamonacc échoue | — |
+| 14:40:37 | Le script relève clamonacc à 0 | **Pending** |
+| 14:45:37 | Confirmé après 5 minutes | **Alerting** |
+| 15:49 | Redémarrage de Grafana (étiquette `severity`) : nouvelle instance | Pending |
+| 15:53:41 | clamonacc corrigé et relancé | — |
+| 15:55:37 | `A=1`, `C=0` | **Normal** |
+
+**Gravité « Unknown » :** sur la page d'accueil, Grafana ne reconnaît que l'étiquette anglaise `severity`. J'ai remplacé `severite: critique` par `severity: critical` (voir [§ 10.15](#1015-gravité--unknown--sur-la-page-daccueil)).
+
+![Correction de l'étiquette severity](images/155-severity-correction.png)
+
+### 9.5 Analyse en temps réel des Téléchargements de thibaut
+
+Le journal de clamonacc le confirmait : seul `/home/flo/Téléchargements` était surveillé. J'ai ajouté les Téléchargements de `thibaut` :
+
+```bash
+cp /etc/clamav/clamd.conf /etc/clamav/clamd.conf.bak
+echo "OnAccessIncludePath /home/thibaut/Téléchargements" >> /etc/clamav/clamd.conf
+systemctl restart clamav-daemon && sleep 30 && systemctl restart clamonacc
+```
+
+Le `sleep 30` laisse clamd recharger ses 3,6 millions de signatures. Si clamonacc démarre trop tôt, il échoue avec `can't setup client`. Le redémarrage dure moins d'une minute, donc **aucune alerte** ne s'est déclenchée : le délai de 5 minutes joue bien son rôle.
+
+![Ajout du dossier et redémarrage](images/167-onaccess-thibaut-conf.png)
+![watching /home/thibaut/Téléchargements](images/168-onaccess-thibaut-journal.png)
+
+**Premier test, déroutant :** un fichier de test copié avec `cp` n'a **pas** été détecté. Avec `OnAccessPrevention yes`, clamonacc analyse un fichier **au moment où on l'ouvre pour le lire**. Pendant `cp`, le fichier est encore vide à l'ouverture, et `ls` ne l'ouvre jamais.
+
+![Fichier copié, toujours présent](images/169-onaccess-cp-non-detecte.png)
+![Aucune détection](images/170-onaccess-journal-vide.png)
+
+**Le vrai test :** ouvrir le fichier, comme le ferait un utilisateur qui double-clique dessus.
+
+```bash
+cat ~/Téléchargements/test-onaccess.exe > /dev/null    # en thibaut
+```
+
+![Opération non permise : ouverture bloquée](images/171-onaccess-cat-bloque.png)
+![FOUND puis moved to /var/quarantaine](images/172-onaccess-found-moved.png)
+
+L'ouverture est **bloquée** (« Opération non permise »), et le fichier est déplacé dans `/var/quarantaine`. Environ 2 minutes après (passage du cron, puis évaluation), le tableau de bord affiche **« Nouvelles détections temps réel » à 1**, et l'alerte **« Nouvelle menace détectée »** passe directement en **Firing**, avec la gravité **critical**.
+
+![Tableau de bord : 1 détection, 4 fichiers en quarantaine](images/173-dashboard-detection.png)
+![Règle Nouvelle menace en Firing](images/174-alerte-menace-liste.png)
+![Instance : machine=clamav, severity=critical](images/175-alerte-menace-instance.png)
+![Accueil : 1 critical](images/176-accueil-critical.png)
+
+### 9.6 Analyse dès la création des fichiers (`OnAccessExtraScanning`)
+
+Pour qu'un fichier soit analysé **dès qu'il arrive**, sans attendre qu'on l'ouvre :
+
+```bash
+echo "OnAccessExtraScanning yes" >> /etc/clamav/clamd.conf
+systemctl restart clamav-daemon && sleep 30 && systemctl restart clamonacc
+```
+
+![extra scanning on inotify events enabled](images/177-extrascanning-conf.png)
+![Le fichier copié a disparu en 5 secondes](images/178-extrascanning-cp.png)
+![FOUND et moved dès la copie](images/179-extrascanning-found.png)
+
+Cette fois, le fichier copié avec `cp` est détecté et déplacé **en moins de 5 secondes**, sans être ouvert. La ligne `ERROR: ClamInotif: could not add element to hash table for …/.clamav-unlink-…` est sans gravité : pendant le déplacement, ClamAV crée puis supprime aussitôt un fichier temporaire, que clamonacc essaie de surveiller.
+
+### 9.7 Bilan : ce que la supervision a trouvé
+
+| Problème | Visible depuis | Détecté par |
+|---|---|---|
+| `clamav-freshclam` arrêté et désactivé : plus de mises à jour des signatures | 12/11 | `clamav_service_active` (étape 5) |
+| Scan hebdomadaire qui isolait les fichiers dans `/var/quarantine`, un dossier non surveillé | Avant le 12/11 | Case « Menaces au dernier scan hebdo » |
+| Scan hebdomadaire qui vidait la quarantaine de ClamUI | 15/11 | Même case, puis l'enquête |
+| clamonacc en panne après la suppression de `/var/quarantine` | 19/11, 14:36 → 15:53 | Alerte « Service ClamAV arrêté » |
+| Téléchargements de `thibaut` non protégés en temps réel | Depuis l'installation | Journal de clamonacc pendant l'enquête |
+| Analyse complète ClamUI « Saine » avec 78 161 fichiers non lus | 19/11 | Comparaison avec `clamdscan` |
+
+---
+
+## 10. Dépannage : erreurs rencontrées
+
+### 10.1 `Booting from Hard Disk...` bloqué (GRUB absent)
 
 **Symptôme :** après l'installation, la VM reste bloquée sur `Booting from Hard Disk...` (capture 02).
 **Cause :** le chargeur de démarrage GRUB n'avait pas été installé sur le disque.
 **Correction :** démarrage sur l'ISO Debian en mode de secours (*Advanced options → Rescue mode*), puis réinstallation de GRUB sur le disque de la VM.
 
-### 9.2 PC Windows sans route vers le réseau du labo
+### 10.2 PC Windows sans route vers le réseau du labo
 
 **Symptôme :** impossible de joindre 10.2.121.0/24 depuis mon PC.
 **Cause :** le PC est sur un autre réseau, sans route vers le VLAN 800.
 **Contournement :** je travaille depuis la VM ClamAV (navigateur pour Prometheus, terminal pour SSH).
 
-### 9.3 `curl` absent sur SUPERVISION
+### 10.3 `curl` absent sur SUPERVISION
 
 **Symptôme :** `-bash: curl : commande introuvable`, puis `E: L'opération curl n'est pas valable` (capture 16).
 **Cause :** Debian minimal n'installe pas `curl`, et `apt curl` n'est pas une commande valide.
 **Correction :** `apt install -y curl`.
 
-### 9.4 Cible ClamAV absente de `prometheus.yml`
+### 10.4 Cible ClamAV absente de `prometheus.yml`
 
 **Symptôme :** `sed` ne modifie rien et `grep -n "10.2.121"` ne trouve aucune ligne. Targets affiche `node (1/1 up)` et les requêtes sur `machine="clamav"` renvoient *no data* (captures 27 à 29).
 **Cause :** la cible `10.2.121.x:9100` n'avait jamais été ajoutée au fichier.
 **Correction :** réécriture de la section `scrape_configs` avec les deux cibles (capture 30).
 
-### 9.5 `clamav_memory_used_bytes` sans données
+### 10.5 `clamav_memory_used_bytes` sans données
 
 **Symptôme :** *no data* sur `clamav_memory_used_bytes` (capture 45).
 **Cause probable :** `clamd` ne renvoie pas ses statistiques mémoire à l'exporter sur cette version. La mémoire de la VM reste visible avec les métriques `node_memory_*`.
 **Statut :** non bloquant, à approfondir.
 
-### 9.6 `clamav-freshclam` arrêté et désactivé
+### 10.6 `clamav-freshclam` arrêté et désactivé
 
 **Symptôme :** `clamav_service_active{service="clamav-freshclam"} 0`. `systemctl status` affiche `inactive (dead)` et **`disabled`**, et `freshclam.log` n'avait plus bougé depuis le 12/11 (captures 51 et 53).
 **Cause :** le service avait été arrêté et désactivé. C'est souvent le cas quand on lance `freshclam` à la main, car il faut d'abord arrêter le service (erreur « log is locked »). Comme il était `disabled`, il ne serait jamais reparti, même au redémarrage.
 **Correction :** `systemctl enable --now clamav-freshclam` (capture 54).
 **À retenir :** c'est **la supervision qui a révélé ce problème**. Sans elle, la base de signatures aurait vieilli sans que personne ne le voie.
 
-### 9.7 Taille de quarantaine à 4096 octets pour un dossier vide
+### 10.7 Taille de quarantaine à 4096 octets pour un dossier vide
 
 **Symptôme :** `clamav_quarantine_files 0` mais `clamav_quarantine_bytes 4096`.
 **Cause :** `du -sb` compte aussi la taille du dossier lui-même (4 096 octets sur ext4).
@@ -969,13 +1228,13 @@ L'écran affiche le même message dans les deux cas : un attaquant ne peut pas s
 find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 ```
 
-### 9.8 Fichier EICAR non bloqué par clamonacc
+### 10.8 Fichier EICAR non bloqué par clamonacc
 
-**Symptôme :** un fichier EICAR est resté dans `/home/thibaut/Téléchargements` depuis le 12/11 sans être bloqué par l'analyse en temps réel.
-**Cause probable :** d'après ma configuration ClamAV, clamonacc surveille `/home/flo/Téléchargements` et `/var/www/data/cv_incoming`, mais pas les Téléchargements de `thibaut`.
-**À faire :** vérifier avec `grep OnAccessIncludePath /etc/clamav/clamd.conf`, ajouter `OnAccessIncludePath /home/thibaut/Téléchargements`, puis redémarrer `clamav-daemon` et `clamonacc`.
+**Symptôme :** un fichier EICAR est resté dans `/home/thibaut/Téléchargements` depuis le 12/11, sans être bloqué par l'analyse en temps réel.
+**Cause :** clamonacc ne surveillait que `/home/flo/Téléchargements` et `/var/www/data/cv_incoming`. Le journal le confirme : `ClamInotif: watching '/home/flo/Téléchargements'`.
+**Correction (19/11) :** ajout de `OnAccessIncludePath /home/thibaut/Téléchargements` et de `OnAccessExtraScanning yes` dans `clamd.conf` (voir [§ 9.5](#95-analyse-en-temps-réel-des-téléchargements-de-thibaut)).
 
-### 9.9 LDAP non activé : lignes restées en commentaire
+### 10.9 LDAP non activé : lignes restées en commentaire
 
 **Symptôme :** après le redémarrage, `journalctl … | grep -i ldap` n'affiche rien (capture 102).
 **Cause :** dans `grafana.ini`, j'avais changé les valeurs mais laissé le `;` en début de ligne (`;enabled = true`). Le `;` met la ligne en commentaire, donc Grafana l'ignorait (capture 100).
@@ -985,9 +1244,58 @@ find "$QUAR" -maxdepth 1 -type f -printf '%s\n' | awk '{s+=$1} END {print s+0}'
 sed -i '/^\[auth.ldap\]/,/^\[/ s/^;\(enabled = true\|config_file = \|allow_sign_up = true\)/\1/' /etc/grafana/grafana.ini
 ```
 
+### 10.10 Scan hebdomadaire et clamonacc : `/var/quarantine` au lieu de `/var/quarantaine`
+
+**Symptôme :** le scan hebdomadaire annonce `moved to '/var/quarantine/…'`, mais `/var/quarantaine` reste vide, et sa date de modification ne change pas.
+**Cause :** sur la VM, `scan-home-hebdo.service` **et** `clamonacc.service` contenaient `--move=/var/quarantine`, en orthographe anglaise. Les fichiers infectés partaient dans un dossier que la supervision ne regardait pas.
+**Correction :** `sed -i 's#/var/quarantine#/var/quarantaine#g'` sur les deux services, puis regroupement des fichiers. Avant de corriger, j'ai cherché toutes les occurrences avec `grep -rn "/var/quarantine" /etc/systemd/system /etc/clamav /usr/local/bin /etc/crontab /var/spool/cron`.
+**Conséquence :** supprimer `/var/quarantine` avant d'avoir corrigé clamonacc a fait échouer son redémarrage suivant (§ 9.4). **Il faut corriger toutes les références avant de supprimer un dossier.**
+
+### 10.11 Le scan hebdomadaire vidait la quarantaine de ClamUI
+
+**Symptôme :** le scan du 15/11 trouve 2 menaces, et la quarantaine de ClamUI est vide, alors que sa base en annonce 2.
+**Cause :** ClamUI range sa quarantaine dans `/home/thibaut/.var/app/…/clamui/quarantine/`, à l'intérieur de `/home`, et le scan hebdomadaire analyse `/home`.
+**Correction :** `--exclude-dir=^/home/[^/]+/.var/app/io.github.linx_systems.ClamUI/data/clamui/quarantine` dans le service.
+
+### 10.12 Verrou caché de `clamscan` / `clamonacc`
+
+**Symptôme :** `rmdir: impossible de supprimer '/var/quarantine': Le dossier n'est pas vide`, alors que `mv *` a tout déplacé.
+**Cause :** un fichier caché `.clamav-quarantine-lock.<PID>.0`, créé par ClamAV pendant un déplacement vers la quarantaine (et gardé par clamonacc tant qu'il tourne). Le motif `*` ne prend pas les fichiers dont le nom commence par un point.
+**Correction :** suppression du verrou orphelin. Le script de métriques ignore désormais les fichiers cachés (`! -name '.*'`).
+
+### 10.13 ClamUI : « os error 2 » et entrées `deleted` toujours affichées
+
+**Symptôme :** **Supprimer** échoue avec `Aucun fichier ou dossier de ce nom (os error 2)`. Après le passage des entrées à `deleted` dans la base, ClamUI les affiche toujours comme « Mis en quarantaine ».
+**Cause :** les fichiers avaient été déplacés par le scan hebdomadaire, et ClamUI affiche toutes les lignes de sa table, quel que soit leur état.
+**Correction :** ClamUI fermé, sauvegarde de `quarantine.db`, puis `DELETE FROM quarantine WHERE state='deleted'`, lancé en tant que `thibaut`.
+
+### 10.14 Alertes « data source not found »
+
+**Symptôme :** les 7 règles affichent `failed to build query 'A': data source not found`.
+**Cause :** la consigne donnait la commande d'exemple `sed -i "s/PROM_UID/TON_UID/"`. Lancée telle quelle, elle a écrit `TON_UID` dans le fichier, et le `sed` suivant, avec le vrai UID, n'a plus trouvé de `PROM_UID` à remplacer.
+**Correction :** récupération de l'UID par l'API et remplacement automatique, sans recopie à la main (voir § 9.3). Vérification : `grep datasourceUid … | sort | uniq -c` doit donner 7 × `__expr__` et 7 × le vrai UID.
+
+### 10.15 Gravité « Unknown » sur la page d'accueil
+
+**Symptôme :** l'encadré **Firing alerts** affiche la gravité `Unknown`.
+**Cause :** Grafana ne reconnaît que l'étiquette `severity`, avec des valeurs comme `critical` ou `warning`. Mon fichier utilisait `severite: critique`.
+**Correction :** `sed -i 's/severite: critique/severity: critical/; s/severite: avertissement/severity: warning/'`, puis redémarrage de Grafana. Changer une étiquette crée une **nouvelle instance** d'alerte : dans l'historique, l'ancienne se termine en `Normal (MissingSeries)`.
+
+### 10.16 Tableau de bord en retard sur l'alerte
+
+**Symptôme :** l'alerte est revenue en Normal, mais le tableau de bord affiche encore « Arrêté » quelques minutes de plus.
+**Cause :** sur une période de 24 h, une requête *range* n'a qu'un point toutes les quelques minutes, et la « dernière valeur » peut être ancienne.
+**Correction :** requêtes **instantanées** pour toutes les cases d'état (version 3 du tableau de bord).
+
+### 10.17 Fichier infecté non détecté par clamonacc après un `cp`
+
+**Symptôme :** un fichier de test copié dans un dossier surveillé reste en place, sans `FOUND` dans le journal.
+**Cause :** avec `OnAccessPrevention yes`, l'analyse a lieu à l'**ouverture** du fichier. Pendant la copie, le fichier est encore vide quand il est ouvert.
+**Correction :** le test valable consiste à ouvrir le fichier (`cat` : ouverture bloquée). Pour analyser dès la création, il faut aussi `OnAccessExtraScanning yes` (§ 9.6).
+
 ---
 
-## 10. Récapitulatif
+## 11. Récapitulatif
 
 ### Ports
 
@@ -1008,7 +1316,11 @@ sed -i '/^\[auth.ldap\]/,/^\[/ s/^;\(enabled = true\|config_file = \|allow_sign_
 | `/etc/apt/sources.list.d/grafana.list` | SUPERVISION | Dépôt APT de Grafana (clé : `/etc/apt/keyrings/grafana.gpg`) |
 | `/etc/grafana/grafana.ini` | SUPERVISION | Configuration de Grafana (section `[auth.ldap]` activée) |
 | [`/etc/grafana/ldap.toml`](config/ldap.toml) | SUPERVISION | Connexion à l'AD et groupes → rôles (`root:grafana`, `640`) |
-| `/etc/clamav/clamd.conf` | ClamAV | `TCPSocket 3310`, `TCPAddr 127.0.0.1` |
+| [`/etc/grafana/provisioning/alerting/alertes-clamav.yaml`](config/alertes-clamav.yaml) | SUPERVISION | Les 7 règles d'alerte (`root:grafana`, `640`) |
+| [`config/dashboard-clamav.json`](config/dashboard-clamav.json) | Dépôt | Tableau de bord ClamAV, à importer dans Grafana |
+| `/etc/systemd/system/scan-home-hebdo.service` | ClamAV | Scan hebdomadaire : `--move=/var/quarantaine` + exclusion de la quarantaine ClamUI |
+| `/etc/systemd/system/clamonacc.service` | ClamAV | Analyse en temps réel : `--move=/var/quarantaine` |
+| `/etc/clamav/clamd.conf` | ClamAV | `TCPSocket 3310`, `TCPAddr 127.0.0.1`, dossiers surveillés (`OnAccessIncludePath`), `OnAccessExtraScanning yes` |
 | `/etc/systemd/system/clamav-daemon.socket.d/tcp.conf` | ClamAV | Port TCP du socket systemd de clamd |
 | `/usr/local/bin/clamav_exporter` | ClamAV | Binaire de l'exporter (v2.1.13) |
 | `/etc/systemd/system/clamav-exporter.service` | ClamAV | Service de l'exporter |

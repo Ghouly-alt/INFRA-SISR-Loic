@@ -1,6 +1,6 @@
 # Supervision Prometheus / Grafana - AP 1 GSBLOLO
 
-> 📘 **Documentation détaillée : [Supervision.md](Supervision.md)** (étapes 1 à 7, avec captures). Cette page résume l'avancement ; la doc sera complétée au fil des étapes suivantes.
+> 📘 **Documentation détaillée : [Supervision.md](Supervision.md)** (étapes 1 à 8, avec captures). Cette page résume l'avancement ; la doc sera complétée au fil des étapes suivantes.
 
 Je mets en place une supervision de mon infrastructure avec **Prometheus** (collecte des métriques) et **Grafana** (tableaux de bord). Le premier objectif est de superviser l'antivirus **ClamAV** et son interface **ClamUI**.
 
@@ -22,7 +22,7 @@ Je mets en place une supervision de mon infrastructure avec **Prometheus** (coll
 | 5 | Script de métriques : scans, quarantaine, tri des CV, ClamUI | ✅ |
 | 6 | Grafana 13.3.1 relié à Prometheus | ✅ |
 | 7 | Authentification Grafana via l'Active Directory (LDAP) | ✅ |
-| 8 | Tableau de bord ClamAV et alertes | ⏳ |
+| 8 | Tableau de bord ClamAV et alertes | ✅ |
 
 ## Cibles Prometheus actuelles
 

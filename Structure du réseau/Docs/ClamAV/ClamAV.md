@@ -402,6 +402,8 @@ Ajouter à la fin du fichier (voir [`config/clamd-onaccess.conf`](config/clamd-o
 OnAccessPrevention yes
 OnAccessIncludePath /home/flo/Téléchargements
 OnAccessIncludePath /var/www/data/cv_incoming
+OnAccessIncludePath /home/thibaut/Téléchargements
+OnAccessExtraScanning yes
 OnAccessExcludeUname clamav
 OnAccessExcludeRootUID yes
 OnAccessExcludePath /proc
@@ -413,6 +415,7 @@ OnAccessExcludePath /sys
 |---|---|
 | `OnAccessPrevention yes` | Bloque l'ouverture du fichier tant qu'il n'est pas déclaré sain. |
 | `OnAccessIncludePath` | Dossier à surveiller. Une ligne par dossier. |
+| `OnAccessExtraScanning yes` | Analyse aussi les fichiers **dès leur création ou leur déplacement** dans un dossier surveillé. Sans elle, avec `OnAccessPrevention`, un fichier n'est analysé qu'au moment où on l'ouvre. |
 | `OnAccessExcludeUname clamav` | **Obligatoire.** `clamd` lit lui-même les fichiers : sans cette exclusion, il se scannerait en boucle. |
 | `OnAccessExcludeRootUID yes` | Ignore les accès de `root`. Sur un poste de travail, mettre `no` pour une protection plus stricte. |
 | `OnAccessExcludePath` | Pseudo-systèmes de fichiers à ne jamais analyser. |
@@ -477,6 +480,10 @@ curl -o /home/flo/Téléchargements/eicar.txt https://secure.eicar.org/eicar.com
 ```
 
 **Résultat attendu :** le journal signale `Eicar-Test-Signature FOUND`, puis le fichier est déplacé dans `/var/quarantaine`.
+
+> 💡 Sans `OnAccessExtraScanning`, le fichier téléchargé n'est analysé qu'à sa **première ouverture** : `cat fichier` est alors bloqué (« Opération non permise »), puis le fichier est déplacé. Avec l'option, il est déplacé dès son arrivée.
+>
+> ⚠️ **Corrigé le 19/11/2026 :** sur la VM, `clamonacc.service` contenait `--move=/var/quarantine`, en orthographe anglaise. Quand ce dossier a été supprimé, clamonacc ne démarrait plus (`Failed to get realpath of /var/quarantine`). La panne a été repérée par une alerte Grafana (voir [AP 1 - Supervision](../../../AP%201/Supervision/Supervision.md#94-test--la-panne-de-clamonacc)). Les Téléchargements de `thibaut` ont aussi été ajoutés à la surveillance.
 
 ---
 
