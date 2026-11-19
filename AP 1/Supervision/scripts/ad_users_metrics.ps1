@@ -85,7 +85,8 @@ foreach ($u in $users) {
 
     foreach ($g in $u.memberOf) {
         $groupe = ($g -split '(?<!\\),', 2)[0].Substring(3) -replace '\\,', ','
-        $membres.Add('ad_group_member{{groupe="{0}",sam="{1}"}} 1' -f (Esc $groupe), (Esc $u.SamAccountName))
+        # Double parenthèse : dans un appel de méthode, la virgule séparerait les arguments de .Add()
+        $membres.Add(('ad_group_member{{groupe="{0}",sam="{1}"}} 1' -f (Esc $groupe), (Esc $u.SamAccountName)))
     }
 }
 
