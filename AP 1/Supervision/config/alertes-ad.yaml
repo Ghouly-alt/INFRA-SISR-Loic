@@ -1,0 +1,103 @@
+# /etc/grafana/provisioning/alerting/alertes-ad.yaml
+# Règles d'alerte Grafana pour la supervision de l'Active Directory (AP 1 GSBLOLO).
+# Remplacer PROM_UID par l'UID de la source de données Prometheus avant de redémarrer Grafana.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: Active Directory
+    folder: Supervision AD
+    interval: 1m
+    rules:
+      - uid: service-ad-arrete
+        title: "Service Active Directory arrêté"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "windows_service_state{job=\"windows\",service=~\"NTDS|DNS|Kdc|Netlogon|ADWS|W32Time|DFSR\",state=\"running\"}"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Le service {{ $labels.service }} est arrêté sur {{ $labels.machine }}"
+          description: "Un service essentiel de l'Active Directory ne tourne plus depuis 5 minutes (NTDS = annuaire, DNS, Kdc = Kerberos, Netlogon, ADWS, W32Time = heure du domaine, DFSR = réplication de SYSVOL)."
+        isPaused: false
+      - uid: compte-ad-verrouille
+        title: "Compte AD verrouillé"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "ad_user_locked_out"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Le compte {{ $labels.sam }} ({{ $labels.nom }}) est verrouillé"
+          description: "Trop de mauvais mots de passe : utilisateur qui a oublié son mot de passe, ou tentative d'intrusion. Déverrouiller avec Unlock-ADAccount après vérification."
+        isPaused: false
+      - uid: script-ad-arrete
+        title: "Script des comptes AD arrêté"
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: PROM_UID
+            model:
+              refId: A
+              expr: "time() - ad_metrics_last_run_timestamp_seconds"
+              instant: true
+              range: false
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [900]
+        noDataState: Alerting
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ad_users_metrics.ps1 n'a pas tourné depuis plus de 15 minutes"
+          description: "La tâche planifiée « Prometheus - utilisateurs AD » devrait lancer le script toutes les 5 minutes sur AD-DC. Les informations sur les comptes ne sont plus à jour."
+        isPaused: false
