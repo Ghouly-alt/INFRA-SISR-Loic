@@ -4,8 +4,8 @@ Je présente ici la mise en place de la sauvegarde de mon infrastructure, avec m
 
 > **Prérequis :** TrueNAS (VM 803, 10.2.121.14) est installé, relié à l'annuaire et partage déjà les dossiers des services (voir la documentation [TrueNAS](../../../Structure%20du%20r%C3%A9seau/Docs/TrueNAS/TrueNAS.md)).
 >
-> **Date de réalisation :** 27/11/2026 (étape 1)
-> **État :** étape 1 terminée et testée.
+> **Date de réalisation :** 27/11/2026 (étapes 1 et 2)
+> **État :** étapes 1 et 2 terminées et testées.
 
 ---
 
@@ -13,6 +13,7 @@ Je présente ici la mise en place de la sauvegarde de mon infrastructure, avec m
 
 1. [Étape 1 : pool Sauvegardes, compte de service et partages](#1-étape-1--pool-sauvegardes-compte-de-service-et-partages)
 2. [Dépannage : erreurs rencontrées](#2-dépannage--erreurs-rencontrées)
+3. [Étape 2 : snapshots des partages et Versions précédentes](#3-étape-2--snapshots-des-partages-et-versions-précédentes)
 
 ---
 
@@ -170,3 +171,83 @@ Le dataset `Sauvegardes/AD` était partagé deux fois : sous le nom `sauvegarde-
 | `net use` réussit pour un utilisateur de l'Accueil | Normal avec TrueNAS : la connexion au partage n'est pas bloquée, ce sont les ACL du dossier qui refusent l'accès. | Toujours tester avec `dir` et `echo`, pas seulement `net use` |
 
 ![Erreur de syntaxe avec les chevrons](images/11-erreur-chevrons.png)
+
+---
+
+## 3. Étape 2 : snapshots des partages et Versions précédentes
+
+Un **snapshot ZFS** est une photo instantanée d'un dataset, en lecture seule. Il ne copie pas les données : il garde seulement les blocs modifiés ou supprimés après sa création, donc il prend très peu de place. Il permet de retrouver un fichier tel qu'il était à l'heure du snapshot.
+
+**Intérêt contre les rançongiciels :** un poste infecté peut chiffrer les fichiers d'un partage, mais il ne peut pas modifier ni supprimer les snapshots, qui ne sont gérés que depuis TrueNAS.
+
+### 3.1 Tâches de snapshots périodiques
+
+Dans **Data Protection > Periodic Snapshot Tasks > Add**, j'ai créé deux tâches sur `Stockage/Services`, en **récursif** pour inclure les 8 datasets des services :
+
+| Tâche | Nom des snapshots | Planification (cron) | Conservation | Snapshots vides |
+| --- | --- | --- | --- | --- |
+| Horaire | `horaire-%Y-%m-%d_%H-%M` | `0 8-19 * * mon-fri` : toutes les heures de 8 h à 19 h, du lundi au vendredi | 2 jours | Non |
+| Quotidienne | `quotidien-%Y-%m-%d_%H-%M` | `0 20 * * *` : tous les jours à 20 h | 14 jours | Oui |
+
+Mes choix :
+- **Deux noms différents** : TrueNAS supprime les snapshots expirés d'après le nom de la tâche. Avec le même nom (`auto-...` par défaut), une tâche pourrait supprimer les snapshots de l'autre.
+- **Pas de snapshot horaire vide** : si personne n'a rien modifié dans l'heure, le snapshot n'apporterait rien.
+- **Un snapshot quotidien même vide** : la réplication de l'étape 3 s'appuiera sur ces snapshots quotidiens.
+- **Plages horaires** : les heures de bureau suffisent pour les snapshots horaires. Le RPO visé pour les fichiers est donc d'1 h en journée.
+
+![Tâche horaire](images/12-tache-horaire.jpg)
+
+![Tâche quotidienne](images/13-tache-quotidienne.jpg)
+
+Les deux tâches apparaissent dans la liste, à l'état **PENDING** en attendant leur première exécution.
+
+![Liste des tâches de snapshots](images/14-taches-snapshots.jpg)
+
+### 3.2 Premier snapshot manuel
+
+Pour tester sans attendre l'heure suivante, j'ai pris un snapshot manuel récursif depuis **Datasets > Stockage/Services > Take Snapshot** (case **Recursive** cochée). Le snapshot `manual-2026-11-27_14-22` est créé sur les 9 datasets.
+
+![Snapshot manuel](images/15-snapshot-manuel.jpg)
+
+### 3.3 Versions précédentes sous Windows
+
+Dans TrueNAS 25.10, le formulaire des partages SMB (objectif **Default Share**) n'a plus d'option « Shadow Copies » : les snapshots ZFS sont proposés directement à Windows comme **Versions précédentes**. Je n'ai donc rien modifié sur les partages.
+
+### 3.4 Test de restauration
+
+Depuis Client1, connecté avec `L.Bodet` (DSI) :
+
+1. Dans `\\10.2.121.14\dsi`, clic droit sur le dossier `Test_Truenas`, puis **Propriétés > Versions précédentes** : la version du snapshot de 14:22 apparaît.
+
+   ![Versions précédentes de Test_Truenas](images/16-versions-precedentes.png)
+
+2. Je supprime le dossier `Test_Truenas`.
+3. Clic droit dans le vide à la racine de `dsi`, **Propriétés > Versions précédentes**, je sélectionne la version de 14:22 puis **Ouvrir** : le snapshot s'ouvre en lecture seule et `Test_Truenas` y est encore.
+
+   ![Snapshot ouvert](images/17-snapshot-ouvert.png)
+
+4. Je copie `Test_Truenas` depuis le snapshot et je le colle dans `dsi` : le dossier est revenu, avec sa date d'origine (29/10/2026).
+
+   ![Dossier restauré](images/18-dossier-restaure.png)
+
+L'utilisateur restaure lui-même son dossier, en moins de 5 minutes et sans intervention de la DSI. C'est le scénario **S2** du PRA, que je rejouerai avec la Comptabilité.
+
+> Le bouton **Restaurer** remet tout le dossier sélectionné à l'état du snapshot, y compris en effaçant les modifications faites depuis. Pour un seul fichier, **Ouvrir** puis copier-coller est plus sûr.
+
+| Test | Résultat attendu | Résultat obtenu |
+| --- | --- | --- |
+| Tâches de snapshots créées | 2 tâches activées sur `Stockage/Services` | ✅ |
+| Snapshot récursif | Un snapshot par dataset des services | ✅ 9 snapshots |
+| Onglet **Versions précédentes** | Le snapshot de 14:22 apparaît | ✅ |
+| Restauration d'un dossier supprimé | Dossier récupéré par l'utilisateur | ✅ |
+| Snapshot horaire automatique | Un snapshot par heure de 8 h à 19 h en semaine (si des fichiers ont changé) | ⏳ à vérifier le prochain jour ouvré |
+
+### 3.5 Erreur rencontrée : accès refusé à `dsi` depuis l'Explorateur
+
+En ouvrant `\\10.2.121.14\dsi` dans l'Explorateur avec la session `L.Bodet`, Windows a refusé l'accès, alors que `L.Bodet` a bien les droits.
+
+![Accès refusé à dsi](images/19-erreur-acces-dsi.png)
+
+**Cause :** Windows n'ouvre qu'**une seule session SMB par serveur**. La dernière commande des tests de l'étape 1 avait connecté `sauvegarde-ad` avec le compte `Y.braite` (Accueil). Windows réutilisait cette session pour tout `10.2.121.14`, et `Y.braite` n'a pas accès à `dsi`. `whoami` (`gsblolo\l.bodet`) et `cmdkey /list` (aucun identifiant enregistré pour TrueNAS) ne montraient rien d'anormal.
+
+**Correction :** couper toutes les connexions (`net use * /delete /y`), vider les tickets Kerberos (`klist purge`) et fermer toutes les fenêtres de l'Explorateur, puis rouvrir le partage.
