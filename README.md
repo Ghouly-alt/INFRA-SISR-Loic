@@ -5,7 +5,7 @@ Ce dépôt présente mon infrastructure réalisée pour les ateliers professionn
 | Atelier | Contenu | État |
 | --- | --- | --- |
 | [AP 1](AP%201/Supervision/README.md) | Supervision Prometheus / Grafana (ClamAV, ClamUI) | Terminé et vérifié (26/11/2026) |
-| [AP 2](AP%202/README.md) | Sauvegarde et PRA (TrueNAS, Active Directory, configurations Linux) | En cours (étape 1 sur 8) |
+| [AP 2](AP%202/README.md) | Sauvegarde et PRA (TrueNAS, Active Directory, configurations Linux) | En cours (étapes 1 et 2 sur 8) |
 | [Structure du réseau](Structure%20du%20r%C3%A9seau/README.md) | Architecture réseau, Active Directory, DC secondaire, TrueNAS, ClamAV et ClamUI | En cours |
 
 ## Mon environnement Proxmox

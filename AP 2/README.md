@@ -2,7 +2,7 @@
 
 > 🚧 **Cahier des charges.** Cette page décrit ce que je vais mettre en place. Les captures et les résultats des tests seront ajoutés au fur et à mesure.
 >
-> 📘 **Documentation détaillée : [Sauvegarde.md](Docs/Sauvegarde/Sauvegarde.md)** (étape 1 terminée le 27/11/2026, avec captures et dépannage). L'avancement est en [section 7](#7-avancement).
+> 📘 **Documentation détaillée : [Sauvegarde.md](Docs/Sauvegarde/Sauvegarde.md)** (étapes 1 et 2 terminées le 27/11/2026, avec captures et dépannage). L'avancement est en [section 7](#7-avancement).
 
 ## 1. Contexte et besoin
 
@@ -86,7 +86,7 @@ Dans **Data Protection > Periodic Snapshot Tasks**, sur `Stockage/Services` en *
 | Horaire | Toutes les heures de 8 h à 19 h, du lundi au vendredi | 2 jours |
 | Quotidienne | Tous les jours à 20 h | 14 jours |
 
-Dans les options avancées de chaque partage SMB, j'active les **clichés instantanés (Shadow Copies)** : les utilisateurs retrouvent alors les snapshots dans l'onglet **Versions précédentes** de l'explorateur Windows et peuvent restaurer un fichier eux-mêmes.
+Les utilisateurs retrouvent les snapshots dans l'onglet **Versions précédentes** de l'explorateur Windows et peuvent restaurer un fichier eux-mêmes. Dans TrueNAS 25.10, il n'y a rien à activer sur les partages : les snapshots ZFS sont exposés comme clichés instantanés (Shadow Copies) par défaut.
 
 **Intérêt contre les rançongiciels :** les snapshots ZFS sont en lecture seule et ne sont pas modifiables depuis un partage SMB. Un poste infecté peut chiffrer les fichiers du partage, mais pas leurs snapshots.
 
@@ -233,8 +233,8 @@ Chaque scénario est **joué pour de vrai**, chronométré et documenté avec de
 
 | Test | Résultat attendu | Résultat obtenu |
 | --- | --- | --- |
-| Snapshot horaire présent dans **Data Protection** | Un snapshot par heure entre 8 h et 19 h | ⏳ |
-| Onglet **Versions précédentes** sur un fichier d'un partage | Les snapshots apparaissent | ⏳ |
+| Snapshot horaire présent dans **Data Protection** | Un snapshot par heure entre 8 h et 19 h | ⏳ tâches créées le 27/11/2026, à vérifier le prochain jour ouvré |
+| Onglet **Versions précédentes** sur un fichier d'un partage | Les snapshots apparaissent | ✅ snapshot de 14:22 visible, dossier supprimé puis restauré (27/11/2026) |
 | Utilisateur de l'Accueil qui ouvre `\\10.2.121.14\sauvegarde-ad` | Accès refusé | ✅ Accès refusé (`Y.braite`, 27/11/2026, aussi sur `sauvegarde-linux`) |
 | Réplication vers `Sauvegardes/Services` | Tâche en état **Finished**, données identiques | ⏳ |
 | Sauvegarde de l'état du système de AD-DC | Événement de réussite dans le journal Backup | ⏳ |
@@ -247,7 +247,7 @@ Chaque scénario est **joué pour de vrai**, chronométré et documenté avec de
 | Étape | Contenu | État |
 | --- | --- | --- |
 | 1 | Disque supplémentaire, pool `Sauvegardes`, compte `svc-sauvegarde` ([doc](Docs/Sauvegarde/Sauvegarde.md#1-étape-1--pool-sauvegardes-compte-de-service-et-partages)) | ✅ 27/11/2026 |
-| 2 | Snapshots de `Stockage/Services` et Versions précédentes | ⏳ |
+| 2 | Snapshots de `Stockage/Services` et Versions précédentes ([doc](Docs/Sauvegarde/Sauvegarde.md#3-étape-2--snapshots-des-partages-et-versions-précédentes)) | ✅ 27/11/2026 |
 | 3 | Réplication vers `Sauvegardes/Services` | ⏳ |
 | 4 | Corbeille AD et sauvegarde de l'état du système de AD-DC | ⏳ |
 | 5 | Sauvegarde des configurations Linux | ⏳ |
