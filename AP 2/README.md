@@ -1,6 +1,8 @@
 # Sauvegarde et PRA - AP 2 GSBLOLO
 
 > 🚧 **Cahier des charges.** Cette page décrit ce que je vais mettre en place. Les captures et les résultats des tests seront ajoutés au fur et à mesure.
+>
+> 📘 **Documentation détaillée : [Sauvegarde.md](Docs/Sauvegarde/Sauvegarde.md)** (étape 1 terminée le 27/11/2026, avec captures et dépannage). L'avancement est en [section 7](#7-avancement).
 
 ## 1. Contexte et besoin
 
@@ -59,7 +61,7 @@ J'applique au mieux la **règle 3-2-1** : 3 copies des données, sur 2 supports 
 
 ### Prérequis à valider avec le professeur
 
-- Ajouter un **troisième disque virtuel** à la VM 803 sur `Raid5-VMs` (100 Gio conseillés, à adapter à l'espace libre).
+- Ajouter un **troisième disque virtuel** à la VM 803 sur `Raid5-VMs` : ✅ validé, disque de 50 Gio ajouté.
 - Savoir si j'ai le droit de lancer des **sauvegardes Proxmox (vzdump)** des VM de mon pool `Lolo` (étape facultative 7).
 
 ## 4. Réalisations prévues
@@ -68,10 +70,10 @@ J'applique au mieux la **règle 3-2-1** : 3 copies des données, sur 2 supports 
 
 1. Ajouter le disque depuis le shell du nœud Proxmox, avec un numéro de série (sinon TrueNAS refuse le pool, comme pour le pool `Stockage`) :
    ```bash
-   qm set 803 --scsi2 Raid5-VMs:100,iothread=1,serial=TRUENAS0003
+   qm set 803 --scsi2 Raid5-VMs:50,iothread=1,serial=TRUENAS0003
    ```
 2. Créer le pool **Sauvegardes** sur ce disque.
-3. Créer les datasets `Sauvegardes/AD` et `Sauvegardes/Linux` (préréglage SMB) et `Sauvegardes/Services` (cible de réplication, sans partage).
+3. Créer les datasets `Sauvegardes/AD` et `Sauvegardes/Linux` (préréglage SMB). `Sauvegardes/Services` n'est pas créé à la main : la tâche de réplication de l'étape 3 le crée elle-même.
 4. Créer dans l'AD le compte de service **svc-sauvegarde** et le groupe **sauvegarde**. Seuls ce groupe et **Admins du domaine** ont des droits sur `Sauvegardes/AD` et `Sauvegardes/Linux`. Les utilisateurs des services n'y ont **aucun accès**.
 5. Créer les partages SMB `sauvegarde-ad` et `sauvegarde-linux`.
 
@@ -233,7 +235,7 @@ Chaque scénario est **joué pour de vrai**, chronométré et documenté avec de
 | --- | --- | --- |
 | Snapshot horaire présent dans **Data Protection** | Un snapshot par heure entre 8 h et 19 h | ⏳ |
 | Onglet **Versions précédentes** sur un fichier d'un partage | Les snapshots apparaissent | ⏳ |
-| Utilisateur de l'Accueil qui ouvre `\\10.2.121.14\sauvegarde-ad` | Accès refusé | ⏳ |
+| Utilisateur de l'Accueil qui ouvre `\\10.2.121.14\sauvegarde-ad` | Accès refusé | ✅ Accès refusé (`Y.braite`, 27/11/2026, aussi sur `sauvegarde-linux`) |
 | Réplication vers `Sauvegardes/Services` | Tâche en état **Finished**, données identiques | ⏳ |
 | Sauvegarde de l'état du système de AD-DC | Événement de réussite dans le journal Backup | ⏳ |
 | Script `sauvegarde_config.sh` | Archive créée et lisible, métrique mise à jour | ⏳ |
@@ -244,7 +246,7 @@ Chaque scénario est **joué pour de vrai**, chronométré et documenté avec de
 
 | Étape | Contenu | État |
 | --- | --- | --- |
-| 1 | Disque supplémentaire, pool `Sauvegardes`, compte `svc-sauvegarde` | ⏳ |
+| 1 | Disque supplémentaire, pool `Sauvegardes`, compte `svc-sauvegarde` ([doc](Docs/Sauvegarde/Sauvegarde.md#1-étape-1--pool-sauvegardes-compte-de-service-et-partages)) | ✅ 27/11/2026 |
 | 2 | Snapshots de `Stockage/Services` et Versions précédentes | ⏳ |
 | 3 | Réplication vers `Sauvegardes/Services` | ⏳ |
 | 4 | Corbeille AD et sauvegarde de l'état du système de AD-DC | ⏳ |
