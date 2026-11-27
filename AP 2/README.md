@@ -2,7 +2,7 @@
 
 > 🚧 **Cahier des charges.** Cette page décrit ce que je vais mettre en place. Les captures et les résultats des tests seront ajoutés au fur et à mesure.
 >
-> 📘 **Documentation détaillée : [Sauvegarde.md](Docs/Sauvegarde/Sauvegarde.md)** (étapes 1 et 2 terminées le 27/11/2026, avec captures et dépannage). L'avancement est en [section 7](#7-avancement).
+> 📘 **Documentation détaillée : [Sauvegarde.md](Docs/Sauvegarde/Sauvegarde.md)** (étapes 1 à 3 terminées le 27/11/2026, avec captures et dépannage). L'avancement est en [section 7](#7-avancement).
 
 ## 1. Contexte et besoin
 
@@ -236,7 +236,7 @@ Chaque scénario est **joué pour de vrai**, chronométré et documenté avec de
 | Snapshot horaire présent dans **Data Protection** | Un snapshot par heure entre 8 h et 19 h | ⏳ tâches créées le 27/11/2026, à vérifier le prochain jour ouvré |
 | Onglet **Versions précédentes** sur un fichier d'un partage | Les snapshots apparaissent | ✅ snapshot de 14:22 visible, dossier supprimé puis restauré (27/11/2026) |
 | Utilisateur de l'Accueil qui ouvre `\\10.2.121.14\sauvegarde-ad` | Accès refusé | ✅ Accès refusé (`Y.braite`, 27/11/2026, aussi sur `sauvegarde-linux`) |
-| Réplication vers `Sauvegardes/Services` | Tâche en état **Finished**, données identiques | ⏳ |
+| Réplication vers `Sauvegardes/Services` | Tâche en état **Finished**, données identiques | ✅ **SUCCESS** au premier lancement (27/11/2026), 9 datasets répliqués en lecture seule ; exécution automatique de 20 h à vérifier le 28/11 |
 | Sauvegarde de l'état du système de AD-DC | Événement de réussite dans le journal Backup | ⏳ |
 | Script `sauvegarde_config.sh` | Archive créée et lisible, métrique mise à jour | ⏳ |
 | Arrêt du montage SMB, puis lancement du script | Le script échoue, l'alerte **SauvegardeEnRetard** passe en *firing* après 26 h (ou avec un seuil réduit pour le test) | ⏳ |
@@ -248,7 +248,7 @@ Chaque scénario est **joué pour de vrai**, chronométré et documenté avec de
 | --- | --- | --- |
 | 1 | Disque supplémentaire, pool `Sauvegardes`, compte `svc-sauvegarde` ([doc](Docs/Sauvegarde/Sauvegarde.md#1-étape-1--pool-sauvegardes-compte-de-service-et-partages)) | ✅ 27/11/2026 |
 | 2 | Snapshots de `Stockage/Services` et Versions précédentes ([doc](Docs/Sauvegarde/Sauvegarde.md#3-étape-2--snapshots-des-partages-et-versions-précédentes)) | ✅ 27/11/2026 |
-| 3 | Réplication vers `Sauvegardes/Services` | ⏳ |
+| 3 | Réplication vers `Sauvegardes/Services` ([doc](Docs/Sauvegarde/Sauvegarde.md#4-étape-3--réplication-vers-le-pool-sauvegardes)) | ✅ 27/11/2026 |
 | 4 | Corbeille AD et sauvegarde de l'état du système de AD-DC | ⏳ |
 | 5 | Sauvegarde des configurations Linux | ⏳ |
 | 6 | Alertes Prometheus et panneau Grafana | ⏳ |
