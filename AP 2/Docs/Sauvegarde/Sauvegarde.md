@@ -4,8 +4,8 @@ Je présente ici la mise en place de la sauvegarde de mon infrastructure, avec m
 
 > **Prérequis :** TrueNAS (VM 803, 10.2.121.14) est installé, relié à l'annuaire et partage déjà les dossiers des services (voir la documentation [TrueNAS](../../../Structure%20du%20r%C3%A9seau/Docs/TrueNAS/TrueNAS.md)).
 >
-> **Date de réalisation :** 27/11/2026 (étapes 1 et 2)
-> **État :** étapes 1 et 2 terminées et testées.
+> **Date de réalisation :** 27/11/2026 (étapes 1 à 3)
+> **État :** étapes 1 à 3 terminées et testées.
 
 ---
 
@@ -14,6 +14,7 @@ Je présente ici la mise en place de la sauvegarde de mon infrastructure, avec m
 1. [Étape 1 : pool Sauvegardes, compte de service et partages](#1-étape-1--pool-sauvegardes-compte-de-service-et-partages)
 2. [Dépannage : erreurs rencontrées](#2-dépannage--erreurs-rencontrées)
 3. [Étape 2 : snapshots des partages et Versions précédentes](#3-étape-2--snapshots-des-partages-et-versions-précédentes)
+4. [Étape 3 : réplication vers le pool Sauvegardes](#4-étape-3--réplication-vers-le-pool-sauvegardes)
 
 ---
 
@@ -251,3 +252,67 @@ En ouvrant `\\10.2.121.14\dsi` dans l'Explorateur avec la session `L.Bodet`, Win
 **Cause :** Windows n'ouvre qu'**une seule session SMB par serveur**. La dernière commande des tests de l'étape 1 avait connecté `sauvegarde-ad` avec le compte `Y.braite` (Accueil). Windows réutilisait cette session pour tout `10.2.121.14`, et `Y.braite` n'a pas accès à `dsi`. `whoami` (`gsblolo\l.bodet`) et `cmdkey /list` (aucun identifiant enregistré pour TrueNAS) ne montraient rien d'anormal.
 
 **Correction :** couper toutes les connexions (`net use * /delete /y`), vider les tickets Kerberos (`klist purge`) et fermer toutes les fenêtres de l'Explorateur, puis rouvrir le partage.
+
+---
+
+## 4. Étape 3 : réplication vers le pool Sauvegardes
+
+Les snapshots de l'étape 2 sont sur le **même disque** que les données. Si le disque du pool `Stockage` tombe en panne, les fichiers et leurs snapshots sont perdus ensemble. La réplication copie chaque soir les données et leurs snapshots sur le **second disque** (pool `Sauvegardes`).
+
+La réplication ZFS envoie des snapshots : la première fois, elle copie tout ; ensuite, elle n'envoie que les blocs modifiés depuis le snapshot précédent (réplication **incrémentale**).
+
+### 4.1 Créer la tâche de réplication
+
+Dans **Data Protection > Replication Tasks > Add**, j'ai choisi **Advanced Replication Creation** pour régler chaque option :
+
+| Option | Valeur | Raison |
+| --- | --- | --- |
+| Name | `replication-services` | |
+| Transport | `LOCAL` | Source et destination sont sur le même TrueNAS : pas besoin de SSH |
+| Source | `Stockage/Services`, **Recursive** | Inclut les 8 datasets des services |
+| Destination | `Sauvegardes/Services` | Créé par la tâche à la première exécution |
+| Destination Dataset Read-only Policy | `SET` | La copie est mise en lecture seule : personne ne peut la modifier par erreur |
+| Periodic Snapshot Tasks | la tâche `quotidien-%Y-%m-%d_%H-%M` | Seuls les snapshots quotidiens sont répliqués (les horaires restent sur le pool `Stockage`) |
+| Snapshot Retention Policy | `Custom`, 30 jours | La copie garde un historique plus long que la source (14 jours) |
+| Run Automatically | coché | La réplication démarre juste après le snapshot quotidien de 20 h |
+
+![Source et destination](images/20-replication-source-destination.jpg)
+
+![Conservation et tâche de snapshots](images/21-replication-retention.jpg)
+
+![Déclenchement automatique](images/22-replication-planification.jpg)
+
+### 4.2 Premier lancement
+
+Pour tester sans attendre 20 h, j'ai pris un snapshot récursif avec le format de nom de la tâche quotidienne (**Take Snapshot > Naming Schema** `quotidien-%Y-%m-%d_%H-%M`) : `quotidien-2026-11-27_14-44`. J'ai ensuite lancé la tâche avec **Run Now**. Elle est passée à l'état **SUCCESS**.
+
+![Réplication réussie](images/24-replication-success.jpg)
+
+### 4.3 Vérifications
+
+- Le dataset `Sauvegardes/Services` contient les 8 datasets des services, avec les mêmes tailles que sur `Stockage` (par exemple 120 Kio pour `DSI`).
+- Chaque dataset répliqué a reçu le snapshot `quotidien-2026-11-27_14-44`. Le snapshot `manual-...` de l'étape 2 n'est pas répliqué, car il ne correspond pas au format de nom de la tâche quotidienne.
+- La copie est en **lecture seule** : TrueNAS affiche *« Permissions cannot be modified on a read-only dataset »* sur `Sauvegardes/Services`.
+- La copie n'est **pas partagée** en SMB : aucun utilisateur ni aucun poste infecté ne peut y accéder.
+
+![Copie dans le pool Sauvegardes](images/25-replica-sauvegardes.jpg)
+
+| Test | Résultat attendu | Résultat obtenu |
+| --- | --- | --- |
+| Réplication vers `Sauvegardes/Services` | Tâche en état **Finished**, données identiques | ✅ **SUCCESS**, 9 datasets et 9 snapshots, mêmes tailles |
+| Copie en lecture seule | `readonly=on` sur la destination | ✅ |
+| Réplication automatique à 20 h | Nouveau snapshot `quotidien-...` sur `Sauvegardes/Services` chaque soir | ⏳ à vérifier le 28/11/2026 |
+
+La restauration complète depuis cette copie (perte du disque du pool `Stockage`) sera testée avec le scénario **S7** du PRA.
+
+### 4.4 Erreur rencontrée : chemin au lieu du nom de dataset
+
+À la première tentative, j'avais saisi les chemins `/mnt/Stockage/Services` et `/mnt/Sauvegardes/Services`. TrueNAS a refusé l'enregistrement :
+
+```
+Symlink-unsafe method called with absolute path(s): /mnt/Stockage/Services, Stockage/Services
+```
+
+![Erreur de chemin absolu](images/23-erreur-chemin-absolu.jpg)
+
+**Cause :** pour une réplication, TrueNAS attend des **noms de datasets ZFS** (`Stockage/Services`), pas des chemins de montage (`/mnt/...`). **Correction :** saisir `Stockage/Services` et `Sauvegardes/Services`, ou choisir les datasets dans l'arborescence sous le champ.
